@@ -1,0 +1,98 @@
+    .tbl-wrap {
+      overflow-x: auto
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+
+      table-layout: auto;
+    }
+
+    th {
+      background: var(--bg3);
+      color: var(--accent2);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 9px 10px;
+      text-align: left;
+      font-family: 'League Spartan', sans-serif;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border)
+    }
+
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(42, 52, 68, .4);
+      vertical-align: top;
+    }
+
+    tr:hover td {
+      background: var(--surface2)
+    }
+
+    .tag {
+      display: inline-block;
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 500
+    }
+
+    .tg {
+      background: rgba(0, 230, 118, .12);
+      color: var(--green)
+    }
+
+    .to {
+      background: rgba(255, 145, 0, .12);
+      color: var(--orange)
+    }
+
+    .tr {
+      background: rgba(255, 23, 68, .12);
+      color: var(--red)
+    }
+
+    .tb {
+      background: rgba(0, 212, 255, .12);
+      color: var(--accent)
+    }
+
+    .tgr {
+      background: rgba(143, 163, 188, .1);
+      color: var(--text2)
+    }
+
+    .tp {
+      background: rgba(124, 77, 255, .15);
+      color: var(--purple)
+    }
+
+    .ty {
+      background: rgba(255, 214, 0, .12);
+      color: var(--yellow)
+    }
+
+    .tgg {
+      background: rgba(0, 230, 118, .2);
+      color: var(--green);
+      font-weight: 700
+    }
+
+    .tgb {
+      background: rgba(0, 212, 255, .2);
+      color: var(--accent)
+    }
+
+    .tgy {
+      background: rgba(255, 214, 0, .2);
+      color: var(--yellow)
+    }
+
+    .trd {
+      background: rgba(255, 23, 68, .2);
+      color: var(--red)
+    }

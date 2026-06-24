@@ -1,0 +1,75 @@
+.fr {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 10px
+    }
+
+    .fr.c2 {
+      grid-template-columns: 1fr 1fr
+    }
+
+    .fr.c3 {
+      grid-template-columns: 1fr 1fr 1fr
+    }
+
+    .fr.c4 {
+      grid-template-columns: 1fr 1fr 1fr 1fr
+    }
+
+    .fi {
+      display: flex;
+      flex-direction: column;
+      gap: 3px
+    }
+
+    label.fl {
+      font-size: 10px;
+      color: var(--accent2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: 'League Spartan', sans-serif;
+      font-weight: 600
+    }
+
+    input,
+    select,
+    textarea {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      color: var(--text);
+      font-family: var(--fb);
+      font-size: 13px;
+      padding: 7px 10px;
+      width: 100%;
+      outline: none;
+
+      transition:
+        background-color .55s cubic-bezier(.22, .61, .36, 1),
+        border-color .55s cubic-bezier(.22, .61, .36, 1),
+        color .55s cubic-bezier(.22, .61, .36, 1),
+        box-shadow .30s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0, 212, 255, .1)
+    }
+
+    input[readonly] {
+      opacity: .6
+    }
+
+    select option {
+      background: var(--bg3)
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 65px
+    }
+
+
+    

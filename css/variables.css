@@ -1,0 +1,94 @@
+    :root {
+      --bg: #0b1e2d;
+      --bg2: #102a43;
+      --bg3: #0e2337;
+      --surface: #153450;
+      --surface2: #1a3d5c;
+      --border: #1e4060;
+      --accent: #1e90ff;
+      --accent2: #75d0fa;
+      --green: #00e676;
+      --orange: #ff9100;
+      --red: #ff1744;
+      --yellow: #ffd600;
+      --purple: #7c4dff;
+      --text: #f0f6ff;
+      --text2: #a9c4d9;
+      --text3: #5a8099;
+      --fh: 'League Spartan', sans-serif;
+      --fb: 'Montserrat', sans-serif;
+      --r: 8px;
+      --rl: 12px;
+    }
+
+
+    body.light-mode {
+      --bg: #eef4fb;
+      --bg2: #ffffff;
+      --bg3: #ddeeff;
+      --surface: #ffffff;
+      --surface2: #e8f2fc;
+      --border: #c5d8ed;
+      --accent: #1e5fa5;
+      --accent2: #1e5fa5;
+      --green: #0a7c3e;
+      --orange: #b46400;
+      --red: #c0122a;
+      --yellow: #8a6000;
+      --purple: #5a32a3;
+      --text: #102a43;
+      --text2: #3a6080;
+      --text3: #7a99b5;
+    }
+
+    ::view-transition-old(root) {
+      animation:
+        fade-out .65s ease forwards;
+    }
+
+    ::view-transition-new(root) {
+      animation:
+        fade-in .65s ease forwards;
+    }
+
+    @keyframes fade-out {
+
+      from {
+        opacity: 1;
+      }
+
+      to {
+        opacity: 0;
+      }
+
+    }
+
+    @keyframes fade-in {
+
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+
+    }
+
+    @keyframes rippleTheme {
+
+      0% {
+        width: 0;
+        height: 0;
+        opacity: .95;
+      }
+
+      100% {
+        width: 220vmax;
+        height: 220vmax;
+        opacity: 08;
+      }
+
+    }
+
+   
