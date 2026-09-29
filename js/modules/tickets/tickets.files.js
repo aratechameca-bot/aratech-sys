@@ -208,6 +208,31 @@ async function uploadTicketFile() {
     return;
   }
 
+  // [FASE 1] Validar tipo y tamaño antes de enviar (el servidor solo acepta estos)
+  if (!TIPOS_ARCHIVO_PERMITIDOS.includes(file.type)) {
+    ARABOT.alert({
+      title: "Formato no permitido",
+
+      message: file.name + " no es un formato permitido.",
+
+      details: "Formatos aceptados: JPG, PNG, WEBP o PDF.",
+    });
+
+    return;
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    ARABOT.alert({
+      title: "Archivo demasiado grande",
+
+      message: file.name + " supera los 10 MB.",
+
+      details: "Reduce el tamaño del archivo e inténtalo de nuevo.",
+    });
+
+    return;
+  }
+
   const reader = new FileReader();
 
   reader.onload = async (e) => {
@@ -221,11 +246,12 @@ async function uploadTicketFile() {
 
       const base64 = e.target.result.split(",")[1];
 
+      // [FASE 1] Nombre seguro para el servidor (espacios, acentos, duplicados)
       const data = await FB.callFunction("subirTicketFile", {
         ticket_id: ticketId,
-        nombre: file.name,
+        nombre: nombreArchivoSeguro(file.name),
         base64,
-        mimeType: file.type || "application/octet-stream",
+        mimeType: file.type,
       });
 
       if (data.error) {
@@ -316,7 +342,8 @@ async function uploadTicketFile() {
         autor: currentUser?.nombre || "ARABOT",
         autor_tipo: currentUser ? "ARATECH" : "ARABOT",
 
-        comentario: "📎 Evidencia agregada: " + data.nombre,
+        // [FASE 1] data.nombre no existe en la respuesta (mostraba "undefined")
+        comentario: "📎 Evidencia agregada: " + file.name,
 
         visible_cliente: false,
 

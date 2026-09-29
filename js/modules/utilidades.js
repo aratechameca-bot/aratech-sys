@@ -336,15 +336,29 @@ async function init() {
     return;
   }
 
-  try {
-    const result = await FB.auth.getRedirectResult();
+  // [FASE 1] Sesión persistente: Firebase restaura la sesión de Google al
+  // recargar y este listener la procesa. También procesa el login del botón.
+  FB.auth.onAuthStateChanged(async (user) => {
+    if (!user || window.currentUser || window._procesandoLogin) return;
 
-    if (result.user) {
-      await procesarUsuarioFirebase(result);
+    window._procesandoLogin = true;
+
+    try {
+      await procesarUsuarioFirebase({ user });
+    } catch (err) {
+      console.error("Error procesando sesión:", err);
+
+      mostrarErrorLogin(
+        err?.code === "permission-denied"
+          ? "No tienes permiso para acceder. Contacta al administrador del sistema."
+          : "No se pudo iniciar sesión. Intenta nuevamente.",
+      );
+
+      await FB.auth.signOut();
+    } finally {
+      window._procesandoLogin = false;
     }
-  } catch (err) {
-    console.error(err);
-  }
+  });
 }
 
 window.exp = exp;

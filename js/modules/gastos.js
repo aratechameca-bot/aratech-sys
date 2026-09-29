@@ -297,10 +297,17 @@ async function subirComprobantesGasto(gastoId) {
   const archivos = [];
 
   for (const file of files) {
+    // [FASE 1] Validar formato antes de subir (el servidor solo acepta estos)
+    if (!TIPOS_ARCHIVO_PERMITIDOS.includes(file.type)) {
+      notify("❌ " + file.name + " no es un formato permitido (JPG, PNG, WEBP o PDF)");
+      continue;
+    }
+
     try {
       let base64;
+      const esImagen = file.type.startsWith("image/");
 
-      if (file.type.startsWith("image/")) {
+      if (esImagen) {
         const dataUrl = await new Promise((res) => {
           const r = new FileReader();
 
@@ -322,23 +329,29 @@ async function subirComprobantesGasto(gastoId) {
         });
       }
 
+      // [FASE 1] Nombre seguro; las imágenes se comprimen a JPEG, así que se
+      // envían como JPEG (antes se enviaba el tipo original).
       const data = await FB.callFunction("subirGastoFile", {
         gasto_id: gastoId,
 
-        nombre: file.name,
+        nombre: nombreArchivoSeguro(file.name, esImagen ? "jpg" : ""),
 
         base64,
 
-        mimeType: file.type || "application/octet-stream",
+        mimeType: esImagen ? "image/jpeg" : file.type,
 
         usuario: currentUser?.nombre || "",
       });
 
       if (data?.ok) {
         archivos.push(data.url);
+      } else {
+        console.error("Error subiendo comprobante:", file.name, data?.error);
+        notify("❌ No se pudo subir " + file.name);
       }
     } catch (e) {
       console.error("Error subiendo comprobante:", e);
+      notify("❌ No se pudo subir " + file.name);
     }
   }
 

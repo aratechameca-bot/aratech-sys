@@ -104,7 +104,7 @@ function quitarFotoPendiente(id) {
 
 function comprimirImagen(dataUrl, calidad) {
   calidad = calidad || 0.75;
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
@@ -115,6 +115,9 @@ function comprimirImagen(dataUrl, calidad) {
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       resolve(canvas.toDataURL("image/jpeg", calidad));
     };
+    // [FASE 1] Si el navegador no puede leer la imagen, avisar en lugar de quedarse esperando
+    img.onerror = () =>
+      reject(new Error("No se pudo procesar la imagen (formato no compatible)."));
     img.src = dataUrl;
   });
 }
@@ -187,30 +190,45 @@ async function subirFotosOrden(ordenId) {
   if (!_fotosPendientes.length) return;
   notify("📷 Subiendo " + _fotosPendientes.length + " foto(s)...");
   let subidas = 0;
+  const total = _fotosPendientes.length;
   for (const foto of _fotosPendientes) {
     try {
       const compressed = await comprimirImagen(foto.dataUrl, 0.75);
       const base64 = compressed.split(",")[1];
-      const result = await API.callFunction("subirFoto", {
+      // [FASE 1] API.callFunction no existía → FB.callFunction.
+      // Nombre seguro y JPEG fijo (comprimirImagen siempre genera JPEG).
+      const result = await FB.callFunction("subirFoto", {
         collection: ordenId,
         payload: {
-          nombre: foto.name,
+          nombre: nombreArchivoSeguro(foto.name, "jpg"),
           base64,
-          mimeType: foto.file.type || "image/jpeg",
+          mimeType: "image/jpeg",
           usuario: currentUser?.nombre || "",
           visible_cliente: false,
         },
       });
 
-      if (result?.ok) subidas++;
+      if (result?.ok) {
+        subidas++;
+      } else {
+        console.warn("Error subiendo foto:", foto.name, result?.error);
+      }
     } catch (e) {
-      console.warn("Error subiendo foto:", e);
+      console.warn("Error subiendo foto:", foto.name, e);
     }
   }
   _fotosPendientes = [];
   document.getElementById("fotos-preview").innerHTML = "";
   actualizarContador();
-  notify("✅ " + subidas + " foto(s) guardadas correctamente");
+  // [FASE 1] Reportar también las fotos que fallaron
+  if (subidas === total) {
+    notify("✅ " + subidas + " foto(s) guardadas correctamente");
+  } else {
+    notify(
+      "⚠️ Se guardaron " + subidas + " de " + total +
+        " foto(s). Puedes agregar las faltantes desde el expediente.",
+    );
+  }
 }
 
 async function cargarFotosExpediente(ordenId) {
@@ -275,20 +293,27 @@ async function subirFotosExpediente(input) {
       notify("❌ " + file.name + " supera los " + MAX_SIZE_MB + "MB");
       continue;
     }
+    // [FASE 1] Validar formato antes de procesar (HEIC u otros no se pueden comprimir)
+    if (!MIME_PERMITIDOS.includes(file.type)) {
+      notify("❌ " + file.name + " no es un formato de imagen permitido (JPG, PNG o WEBP)");
+      continue;
+    }
     const reader = new FileReader();
     reader.onload = async (e) => {
+     try {
       const compressed = await comprimirImagen(e.target.result, 0.75);
       const base64 = compressed.split(",")[1];
       console.log(
         "VISIBLE FOTO:",
         document.getElementById("exp-foto-visible")?.checked,
       );
+      // [FASE 1] Nombre seguro y JPEG fijo (comprimirImagen siempre genera JPEG)
       const result = await FB.callFunction("subirFoto", {
         collection: ordenId,
         payload: {
-          nombre: file.name,
+          nombre: nombreArchivoSeguro(file.name, "jpg"),
           base64,
-          mimeType: file.type || "image/jpeg",
+          mimeType: "image/jpeg",
           usuario: currentUser?.nombre || "",
           email: currentUser?.email || "",
           visible_cliente:
@@ -353,6 +378,11 @@ async function subirFotosExpediente(input) {
       }
 
       cargarFotosExpediente(ordenId);
+     } catch (err) {
+      // [FASE 1] Antes el error quedaba oculto; ahora se informa al usuario
+      console.error("Error subiendo foto:", file.name, err);
+      notify("❌ No se pudo subir " + file.name + ": " + (err?.message || "error desconocido"));
+     }
     };
     reader.readAsDataURL(file);
   }

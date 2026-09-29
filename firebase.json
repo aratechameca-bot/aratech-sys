@@ -18,7 +18,19 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "functions/**",
+      "*.log",
+      "firestore.rules",
+      "firestore.indexes.json",
+      "storage.rules",
+      "docs/**",
+      "**/*.md",
+      "*.txt",
+      "downloaded-logs-*",
+      "js/firebase/**",
+      "js/data/**",
+      "js/calculadora.js"
     ],
     "headers": [
       {

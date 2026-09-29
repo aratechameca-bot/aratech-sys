@@ -111,9 +111,9 @@ async function initGoogleAuth() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
 
-    const result = await FB.auth.signInWithPopup(provider);
-
-    await procesarUsuarioFirebase(result);
+    // [FASE 1] Solo abre el popup. El procesamiento del usuario lo hace
+    // FB.auth.onAuthStateChanged (en init) para evitar procesarlo dos veces.
+    await FB.auth.signInWithPopup(provider);
   } catch (e) {
     console.error("FIREBASE ERROR:", e);
     console.error("CODE:", e.code);
@@ -285,6 +285,16 @@ async function cerrarSesion() {
   registrarAcceso("Cierre de sesión");
 
   localStorage.removeItem("ara_session");
+
+  // [FASE 1] Limpiar del navegador los datos de ARASYS (caché "ara_*").
+  // Se conservan preferencias como el tema y el último panel visitado.
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("ara_"))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch (e) {
+    console.warn("No se pudo limpiar el caché local:", e);
+  }
 
   window.currentUser = null;
 

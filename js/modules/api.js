@@ -27,7 +27,9 @@ const API = {
         "cliente_avisos",
         "finanzas_movimientos",
       ];
-      const results = await Promise.all(
+      // [FASE 1] allSettled: si una colección no está permitida para el rol
+      // del usuario, las demás se cargan igual (antes fallaba toda la carga).
+      const results = await Promise.allSettled(
         collections.map((col) => DATA.getAll(col)),
       );
 
@@ -44,9 +46,19 @@ const API = {
         return v;
       }
       collections.forEach((col, i) => {
-        if (results[i] && Array.isArray(results[i])) {
+        const res = results[i];
+
+        if (res.status === "rejected") {
+          console.warn(
+            `Sin acceso a ${col}:`,
+            res.reason?.code || res.reason?.message || res.reason,
+          );
+          return;
+        }
+
+        if (res.value && Array.isArray(res.value)) {
           const fields = window.FECHA_FIELDS[col] || [];
-          const normed = results[i].map((r) => {
+          const normed = res.value.map((r) => {
             if (!fields.length) return r;
             const n = { ...r };
             fields.forEach((f) => {
@@ -57,14 +69,26 @@ const API = {
           DB.set(col, normed);
         }
       });
+
+      // [FASE 1] Si no se pudo cargar ninguna colección, sí es un error real
+      // (sin conexión o sin sesión): se reporta como antes.
+      if (results.every((r) => r.status === "rejected")) {
+        throw results[0].reason;
+      }
       // ============================================================
       // Cargar configuración desde Firestore
       // ============================================================
 
-      const cfg = await DATA.getDoc("config", "config");
+      // [FASE 1] La configuración se carga aparte para que un error aquí
+      // no marque todo el sistema como "Sin conexión".
+      try {
+        const cfg = await DATA.getDoc("config", "config");
 
-      if (cfg) {
-        DB.sobj("config", cfg);
+        if (cfg) {
+          DB.sobj("config", cfg);
+        }
+      } catch (e) {
+        console.warn("Sin acceso a config:", e?.code || e?.message || e);
       }
 
       showSyncStatus("online");

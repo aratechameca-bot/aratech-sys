@@ -14,8 +14,14 @@ function signedIn() {
 
 function currentUser() {
   return get(
-    /databases/$(database)/documents/usuarios/$(request.auth.token.email)
+    /databases/$(database)/documents/usuarios/$(request.auth.token.email.lower())
   ).data;
+}
+
+// [FASE 1] El usuario autenticado es el dueño de este documento de usuarios
+function isSelf(userId) {
+  return signedIn() &&
+         request.auth.token.email.lower() == userId;
 }
 
 function isActive() {
@@ -47,7 +53,20 @@ function isTecnico() {
 
     match /usuarios/{userId} {
 
-      allow get, list, create, update, delete: if isAdmin();
+      // [FASE 1] Cada usuario puede leer su propio documento (necesario para el login,
+      // incluso si está desactivado, para mostrarle el aviso correspondiente).
+      // [FASE 1.1] Los usuarios activos pueden consultar el directorio del personal:
+      // lo usan las listas de técnicos (órdenes) y de responsables (tickets).
+      allow get: if isSelf(userId) || isActive();
+      allow list: if isActive();
+
+      // [FASE 1] El propio usuario solo puede actualizar sus datos de último acceso
+      allow update: if isAdmin() ||
+        (isSelf(userId) &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['foto', 'ultimoAcceso', 'ultimoLogin', 'actualizado', 'actualizadoPor']));
+
+      allow create, delete: if isAdmin();
 
     }
 
@@ -57,7 +76,10 @@ function isTecnico() {
 
     match /config/{docId} {
 
-      allow get, list, create, update, delete: if isAdmin();
+      // [FASE 1] Usuarios activos pueden leer la configuración (formatos, datos del negocio)
+      allow get, list: if isActive();
+
+      allow create, update, delete: if isAdmin();
 
     }
 
@@ -316,7 +338,10 @@ function isTecnico() {
 
       allow get, list: if signedIn();
 
-      allow create, update, delete: if isAdmin();
+      // [FASE 1] Usuarios activos generan folios (transacción FB.nextFolio)
+      allow create, update: if isActive();
+
+      allow delete: if isAdmin();
 
     }
 
