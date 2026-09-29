@@ -295,6 +295,10 @@ function procesarSistema() {
 
 // INIT
 async function init() {
+  // [FASE 1.2] Respaldo: si algo falla o Firebase no responde, mostrar el
+  // contenido del login a los 8 segundos para que nunca quede oculto.
+  setTimeout(() => document.body.classList.remove("auth-pending"), 8000);
+
   initIcons();
 
   initCat();
@@ -329,7 +333,13 @@ async function init() {
   // AUTENTICACIÓN
   // ==========================================================
 
+  // [FASE 1.2] Mientras Firebase verifica si hay una sesión guardada, el
+  // contenido de la pantalla de login está oculto (clase "auth-pending" en
+  // <body>). Se muestra solo si no hay sesión, para evitar el parpadeo.
+  const mostrarLogin = () => document.body.classList.remove("auth-pending");
+
   if (window.DEV_MODE) {
+    mostrarLogin();
     if (!window.currentUser) {
       loginLocal();
     }
@@ -339,7 +349,12 @@ async function init() {
   // [FASE 1] Sesión persistente: Firebase restaura la sesión de Google al
   // recargar y este listener la procesa. También procesa el login del botón.
   FB.auth.onAuthStateChanged(async (user) => {
-    if (!user || window.currentUser || window._procesandoLogin) return;
+    if (!user) {
+      mostrarLogin();
+      return;
+    }
+
+    if (window.currentUser || window._procesandoLogin) return;
 
     window._procesandoLogin = true;
 
@@ -357,6 +372,7 @@ async function init() {
       await FB.auth.signOut();
     } finally {
       window._procesandoLogin = false;
+      mostrarLogin();
     }
   });
 }

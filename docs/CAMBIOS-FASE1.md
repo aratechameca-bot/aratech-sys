@@ -125,6 +125,22 @@ Se agregan exclusiones a `hosting.ignore` para que no se publiquen:
 
 ---
 
+## Cambio 1.2 — Cierre de sesión real y login sin parpadeo (ajuste posterior)
+
+**Detectado:** al pulsar "Cerrar sesión", aparecía el login y el usuario volvía a entrar automáticamente. Además, al recargar se veía la pantalla de login un instante antes de entrar.
+
+**Causa:** `cerrarSesion()` llamaba a `FB.auth.signOut()` sin esperar y recargaba de inmediato. La recarga ocurría antes de que Firebase borrara la sesión guardada, así que al volver la restauraba y `onAuthStateChanged` volvía a iniciar sesión.
+
+**Cambios:**
+
+- `auth.js` (`cerrarSesion`): `await FB.auth.signOut()` antes de `location.reload()`. También espera a que se guarde el registro "Cierre de sesión".
+- `historial.js` (`registrarAcceso`): devuelve la promesa del guardado, para poder esperarla. Los demás usos no cambian.
+- `index.html`: `<body class="auth-pending">`.
+- `css/responsive.css`: mientras exista `auth-pending`, el contenido del login queda oculto y solo se ve el fondo.
+- `utilidades.js` (`init`): se quita `auth-pending` cuando Firebase confirma que no hay sesión, o al terminar de procesarla. Como respaldo, se quita a los 8 segundos pase lo que pase.
+
+**Publicación:** solo hosting, `firebase deploy --only hosting`.
+
 ## Publicación (desde la terminal de VS Code, en `C:\PROYECTOS\ARASYS`)
 
 ### 1. Copiar los archivos

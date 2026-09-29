@@ -418,6 +418,12 @@
       display: none !important;
     }
 
+    /* [FASE 1.2] Mientras se verifica la sesión guardada, solo se ve el fondo
+       del login (sin botón), para no mostrarlo si la sesión se va a restaurar */
+    body.auth-pending #login-screen > * {
+      visibility: hidden;
+    }
+
     /* ==========================================================
    FIN LAYOUT
 ========================================================== */

@@ -282,7 +282,12 @@ async function cerrarSesion() {
 
   if (!ok) return;
 
-  registrarAcceso("Cierre de sesión");
+  // [FASE 1.2] Esperar a que se guarde el registro antes de cerrar la sesión
+  try {
+    await registrarAcceso("Cierre de sesión");
+  } catch (e) {
+    console.warn("No se pudo registrar el cierre de sesión:", e);
+  }
 
   localStorage.removeItem("ara_session");
 
@@ -300,7 +305,14 @@ async function cerrarSesion() {
 
   document.body.classList.remove("autenticado");
 
-  FB.auth.signOut();
+  // [FASE 1.2] Esperar a que Firebase borre la sesión guardada ANTES de recargar.
+  // Antes la recarga ocurría primero, Firebase restauraba la sesión y el
+  // usuario volvía a entrar automáticamente.
+  try {
+    await FB.auth.signOut();
+  } catch (e) {
+    console.error("Error al cerrar sesión en Firebase:", e);
+  }
 
   location.reload();
 }

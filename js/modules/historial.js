@@ -34,7 +34,9 @@ function registrarAcceso(tipo) {
     accion: tipo,
   };
 
-  DATA.save("accesos", acceso.id, acceso).catch(console.error);
+  // [FASE 1.2] Se devuelve la promesa para que el cierre de sesión pueda
+  // esperar a que se guarde el registro antes de salir.
+  return DATA.save("accesos", acceso.id, acceso).catch(console.error);
 }
 
 async function rndHistorial(lista = null) {
