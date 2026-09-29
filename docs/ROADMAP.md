@@ -25,8 +25,8 @@ ETAPA 8.6
   ├── F2  Firebase Hardening (Rules)       ✅
   ├── Fase 0  Estabilización de Functions  ✅
   ├── Fase 1  Auth y operación             ✅
-  ├── Fase 2  Functions + Storage          🔴 Lista para publicar
-  ├── Fase 3  App Check                    ⏳
+  ├── Fase 2  Functions + Storage          ✅
+  ├── Fase 3  App Check                    🔴 En monitoreo
   ├── Fase 4  Integridad de datos          ⏳
   ├── Fase 5  Logs y exposición de errores ⏳
   └── Fase 6  Auditoría final Zero Trust   ⏳
@@ -58,9 +58,9 @@ Publicada en producción (reglas y hosting) y probada con usuarios admin y técn
 6. Hosting: se excluyen backend, reglas, logs, docs y borradores de Modular.
 7. Limpieza de datos del navegador al cerrar sesión.
 
-### 🔴 Fase 2 — Functions + Storage (lista para publicar)
+### ✅ Fase 2 — Functions + Storage (terminada)
 
-Detalle y orden de publicación en `docs/CAMBIOS-FASE2.md`. Decisiones: archivos privados; recordatorio diario desde el día 7 (sin cambio).
+Publicada y probada (pruebas A, B y C). Archivos antiguos privatizados. Pendiente: revisar la primera corrida del scheduler. Detalle en `docs/CAMBIOS-FASE2.md`. Decisiones: archivos privados; recordatorio diario desde el día 7 (sin cambio).
 
 - Funciones de correo (las 6 `notificar*` y `alertaInventarioBajo`): exigir sesión y usuario activo, y escapar el HTML de los datos insertados.
 - Validar rol con `requireRole` (de `lib/auth.js`) en las funciones de ARASYS.
@@ -69,7 +69,9 @@ Detalle y orden de publicación en `docs/CAMBIOS-FASE2.md`. Decisiones: archivos
 - Storage privado de verdad: quitar `makePublic()` y usar enlaces firmados.
 - Scheduler: fechas de garantías en hora de México (antes un día desfasadas) y errores aislados por registro. El recordatorio diario se mantiene.
 
-### ⏳ Fase 3 — App Check
+### 🔴 Fase 3 — App Check (en monitoreo)
+
+Clave reCAPTCHA Enterprise creada y app registrada; ARASYS envía App Check sin aplicarlo aún. Detalle en `docs/CAMBIOS-FASE3.md`.
 
 - Firebase App Check en Firestore, Storage y Functions.
 - Límites por usuario en funciones sensibles.
