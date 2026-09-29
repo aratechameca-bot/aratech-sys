@@ -28,8 +28,9 @@ function renderTicketFiles(ticketId) {
       ">
 
         <a
-          href="${a.url}"
-          target="_blank"
+          href="#"
+          data-ref="${escAttr(a.storage_path || a.url)}"
+          onclick="abrirArchivoPrivado(this.dataset.ref); return false;"
           style="
             color:var(--accent);
             font-weight:600;
@@ -266,8 +267,10 @@ async function uploadTicketFile() {
         return;
       }
 
+      // [FASE 2] Se completa el MISMO registro que creó el servidor (data.id)
+      // en lugar de crear uno nuevo. Antes quedaban dos registros por archivo.
       const archivo = {
-        id: "TA-" + Date.now(),
+        id: data.id,
 
         ticket_id: ticketId,
 
@@ -277,12 +280,18 @@ async function uploadTicketFile() {
 
         nombre: file.name,
 
-        url: data.url,
+        storage_path: data.storage_path || "",
+
+        url: data.url || "",
+
+        eliminado: false,
 
         visible_cliente: document.getElementById("tkexp-archivo-visible")
           .checked,
 
         autor: currentUser?.nombre || "Sistema",
+
+        autor_tipo: "ARATECH",
       };
 
       await DATA.save("ticketarchivos", archivo.id, archivo);

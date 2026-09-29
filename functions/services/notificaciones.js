@@ -9,6 +9,11 @@ const {
 
 const LOG = require("../lib/logger");
 
+// [FASE 2] Solo personal activo de ARASYS puede enviar correos, y todos los
+// datos que se insertan en el HTML se escapan.
+const { requireStaff } = require("../lib/auth");
+const { esc, escMultilinea, emailValido } = require("../lib/html");
+
 // ============================================================
 // CAMBIO ESTADO ORDEN
 // ============================================================
@@ -18,6 +23,8 @@ exports.notificarCambioEstadoOrden = onCall(
     secrets: [ZOHO_SMTP_PASSWORD],
   },
   async (request) => {
+    await requireStaff(request);
+
     const payload = request.data;
     const { correo, nombre, equipo, modelo, estado, folio } = payload;
 
@@ -25,6 +32,13 @@ exports.notificarCambioEstadoOrden = onCall(
       return {
         ok: false,
         razon: "SIN_CORREO",
+      };
+    }
+
+    if (!emailValido(correo)) {
+      return {
+        ok: false,
+        razon: "CORREO_INVALIDO",
       };
     }
 
@@ -36,13 +50,13 @@ exports.notificarCambioEstadoOrden = onCall(
 
       cuerpo = `
       <p>
-        Hola <b>${nombre}</b>,
+        Hola <b>${esc(nombre)}</b>,
         ¡buenas noticias!
       </p>
 
       <p>
         Tu equipo
-        <b>${equipo} ${modelo || ""}</b>
+        <b>${esc(equipo)} ${esc(modelo || "")}</b>
         ya está listo para ser recogido.
       </p>
 
@@ -55,14 +69,14 @@ exports.notificarCambioEstadoOrden = onCall(
 
       cuerpo = `
       <p>
-        Hola <b>${nombre}</b>,
+        Hola <b>${esc(nombre)}</b>,
       </p>
 
       <p>
         Tu equipo
-        <b>${equipo} ${modelo || ""}</b>
+        <b>${esc(equipo)} ${esc(modelo || "")}</b>
         cambió al estado:
-        <b>${estado}</b>.
+        <b>${esc(estado)}</b>.
       </p>
     `;
     }
@@ -99,6 +113,8 @@ exports.notificarRecepcionOrden = onCall(
     secrets: [ZOHO_SMTP_PASSWORD],
   },
   async (request) => {
+    await requireStaff(request);
+
     const { correo, nombre, folio, equipo, modelo, servicios, fechaProm } =
       request.data;
 
@@ -106,6 +122,13 @@ exports.notificarRecepcionOrden = onCall(
       return {
         ok: false,
         razon: "SIN_CORREO",
+      };
+    }
+
+    if (!emailValido(correo)) {
+      return {
+        ok: false,
+        razon: "CORREO_INVALIDO",
       };
     }
 
@@ -122,9 +145,9 @@ exports.notificarRecepcionOrden = onCall(
     const cuerpo = `
 
 <p>
-Hola <b>${nombre}</b>,
+Hola <b>${esc(nombre)}</b>,
 hemos recibido tu
-<b>${equipo}${modelo ? " " + modelo : ""}</b>
+<b>${esc(equipo)}${esc(modelo ? " " + modelo : "")}</b>
 en nuestro taller.
 </p>
 
@@ -159,7 +182,7 @@ padding:8px 12px;
 color:#fff
 ">
 
-<b>${folio}</b>
+<b>${esc(folio)}</b>
 
 </td>
 
@@ -184,7 +207,7 @@ padding:8px 12px;
 color:#1a1a2e
 ">
 
-${equipo}${modelo ? " " + modelo : ""}
+${esc(equipo)}${esc(modelo ? " " + modelo : "")}
 
 </td>
 
@@ -209,7 +232,7 @@ padding:8px 12px;
 color:#1a1a2e
 ">
 
-${servicios}
+${esc(servicios)}
 
 </td>
 
@@ -234,7 +257,7 @@ padding:8px 12px;
 color:#1a1a2e
 ">
 
-<b>${fechaStr}</b>
+<b>${esc(fechaStr)}</b>
 
 </td>
 
@@ -284,6 +307,8 @@ exports.notificarComentarioTicket = onCall(
     secrets: [ZOHO_SMTP_PASSWORD],
   },
   async (request) => {
+    await requireStaff(request);
+
     const { correo, cliente, folio, comentario, estado } = request.data;
 
     if (!correo) {
@@ -293,13 +318,20 @@ exports.notificarComentarioTicket = onCall(
       };
     }
 
+    if (!emailValido(correo)) {
+      return {
+        ok: false,
+        razon: "CORREO_INVALIDO",
+      };
+    }
+
     const asunto = "Actualización de ticket " + folio + " | ARATECH";
 
     const cuerpo = `
 
 <p>
 
-Hola <b>${cliente}</b>,
+Hola <b>${esc(cliente)}</b>,
 
 </p>
 
@@ -336,7 +368,7 @@ padding:8px 12px;
 color:#fff;
 ">
 
-<b>${folio}</b>
+<b>${esc(folio)}</b>
 
 </td>
 
@@ -361,7 +393,7 @@ padding:8px 12px;
 color:#1a1a2e;
 ">
 
-${estado}
+${esc(estado)}
 
 </td>
 
@@ -385,7 +417,7 @@ font-size:14px;
 line-height:1.5;
 ">
 
-${comentario}
+${escMultilinea(comentario)}
 
 </div>
 
@@ -432,6 +464,8 @@ exports.notificarEstadoTicket = onCall(
     secrets: [ZOHO_SMTP_PASSWORD],
   },
   async (request) => {
+    await requireStaff(request);
+
     const { correo, cliente, folio, estado } = request.data;
 
     if (!correo) {
@@ -441,13 +475,20 @@ exports.notificarEstadoTicket = onCall(
       };
     }
 
+    if (!emailValido(correo)) {
+      return {
+        ok: false,
+        razon: "CORREO_INVALIDO",
+      };
+    }
+
     const asunto = "Estado actualizado: " + folio + " | ARATECH";
 
     const cuerpo = `
 
 <p>
 
-Hola <b>${cliente}</b>,
+Hola <b>${esc(cliente)}</b>,
 
 </p>
 
@@ -485,7 +526,7 @@ padding:8px 12px;
 color:#fff;
 ">
 
-<b>${folio}</b>
+<b>${esc(folio)}</b>
 
 </td>
 
@@ -511,7 +552,7 @@ color:#1a1a2e;
 font-weight:700;
 ">
 
-${estado}
+${esc(estado)}
 
 </td>
 
@@ -569,6 +610,8 @@ exports.notificarCreacionTicket = onCall(
     secrets: [ZOHO_SMTP_PASSWORD],
   },
   async (request) => {
+    await requireStaff(request);
+
     const { correo, cliente, folio, asuntoTicket, prioridad, estado } =
       request.data;
 
@@ -579,13 +622,20 @@ exports.notificarCreacionTicket = onCall(
       };
     }
 
+    if (!emailValido(correo)) {
+      return {
+        ok: false,
+        razon: "CORREO_INVALIDO",
+      };
+    }
+
     const asunto = "Tu ticket ha sido registrado | " + folio;
 
     const cuerpo = `
 
 <p>
 
-Hola <b>${cliente}</b>,
+Hola <b>${esc(cliente)}</b>,
 
 </p>
 
@@ -639,7 +689,7 @@ padding:8px 12px;
 color:#fff;
 ">
 
-<b>${folio}</b>
+<b>${esc(folio)}</b>
 
 </td>
 
@@ -663,7 +713,7 @@ padding:8px 12px;
 color:#1a1a2e;
 ">
 
-${estado}
+${esc(estado)}
 
 </td>
 
@@ -687,7 +737,7 @@ padding:8px 12px;
 color:#1a1a2e;
 ">
 
-${prioridad}
+${esc(prioridad)}
 
 </td>
 
@@ -711,7 +761,7 @@ padding:8px 12px;
 color:#1a1a2e;
 ">
 
-${asuntoTicket}
+${esc(asuntoTicket)}
 
 </td>
 
@@ -818,6 +868,8 @@ exports.notificarEvidencia = onCall(
     secrets: [ZOHO_SMTP_PASSWORD],
   },
   async (request) => {
+    await requireStaff(request);
+
     const { correo, cliente, folio } = request.data;
 
     if (!correo) {
@@ -827,13 +879,20 @@ exports.notificarEvidencia = onCall(
       };
     }
 
+    if (!emailValido(correo)) {
+      return {
+        ok: false,
+        razon: "CORREO_INVALIDO",
+      };
+    }
+
     const asunto = "Nueva evidencia agregada | " + folio + " | ARATECH";
 
     const cuerpo = `
 
 <p>
 
-Hola <b>${cliente}</b>,
+Hola <b>${esc(cliente)}</b>,
 
 </p>
 
@@ -872,7 +931,7 @@ padding:8px 12px;
 color:#fff;
 ">
 
-<b>${folio}</b>
+<b>${esc(folio)}</b>
 
 </td>
 
@@ -930,6 +989,8 @@ exports.alertaInventarioBajo = onCall(
     secrets: [ZOHO_SMTP_PASSWORD],
   },
   async (request) => {
+    await requireStaff(request);
+
     const { producto, stock, minimo } = request.data;
 
     const asunto = "⚠️ ARATECH — Inventario bajo: " + producto;
@@ -939,10 +1000,10 @@ exports.alertaInventarioBajo = onCall(
 <p>
 
 El producto
-<b>${producto}</b>
+<b>${esc(producto)}</b>
 cuenta con solo
 
-<b>${stock} unidades</b>
+<b>${esc(stock)} unidades</b>
 
 en stock.
 
@@ -953,7 +1014,7 @@ en stock.
 
 Se encuentra por debajo del mínimo establecido de:
 
-<b>${minimo} unidades</b>
+<b>${esc(minimo)} unidades</b>
 
 </p>
 

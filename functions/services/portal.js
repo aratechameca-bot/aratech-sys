@@ -5,6 +5,7 @@ const { ok } = require("../lib/responses");
 const ERR = require("../lib/errors");
 const LOG = require("../lib/logger");
 const VALID = require("../lib/validators");
+const { requireStaff } = require("../lib/auth");
 
 exports.loginCliente = onCall(async (request) => {
   try {
@@ -188,6 +189,9 @@ exports.getDetalleServicio = onCall(async (request) => {
 });
 
 exports.activarPortalCliente = onCall(async (request) => {
+  // [FASE 2] Solo admin o recepción (antes no pedía sesión)
+  await requireStaff(request, ["admin", "recepcionista"]);
+
   const clienteId = String(request.data.cliente_id || "").trim();
 
   VALID.required(clienteId, "cliente_id");

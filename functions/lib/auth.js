@@ -68,7 +68,52 @@ async function requireRole(email, rolesPermitidos = []) {
   return usuario;
 }
 
+// ============================================================
+// [FASE 2] Exigir que quien llama sea personal activo de ARASYS
+// ============================================================
+// Con el login de Google, cualquier cuenta de Gmail puede obtener una
+// sesión de Firebase. Esta función verifica además que el correo esté
+// registrado en "usuarios" (ID del documento = correo en minúsculas),
+// que esté activo y, opcionalmente, que tenga uno de los roles indicados.
+
+const ROLES_PERSONAL = ["admin", "recepcionista", "tecnico"];
+
+async function requireStaff(request, rolesPermitidos = ROLES_PERSONAL) {
+  const auth = requireAuth(request);
+
+  const email = String(auth.token.email || "")
+    .trim()
+    .toLowerCase();
+
+  if (!email) {
+    ERR.permission("USUARIO_NO_AUTORIZADO");
+  }
+
+  const snap = await db.collection("usuarios").doc(email).get();
+
+  if (!snap.exists) {
+    ERR.permission("USUARIO_NO_AUTORIZADO");
+  }
+
+  const usuario = snap.data();
+
+  if (usuario.activo !== true) {
+    ERR.permission("USUARIO_INACTIVO");
+  }
+
+  if (rolesPermitidos.length && !rolesPermitidos.includes(usuario.rol)) {
+    ERR.permission("PERMISO_DENEGADO");
+  }
+
+  return {
+    id: snap.id,
+    ...usuario,
+  };
+}
+
 module.exports = {
+  requireStaff,
+  ROLES_PERSONAL,
   requireAuth,
   user,
   getUserByEmail,

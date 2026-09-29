@@ -4,32 +4,51 @@ const { admin, db } = require("../lib/firestore");
 
 const { ok } = require("../lib/responses");
 
-const { requireAuth } = require("../lib/auth");
+const { requireStaff } = require("../lib/auth");
 
 const VALIDATOR = require("../lib/validators");
 
+const ERR = require("../lib/errors");
+
 const bucket = admin.storage().bucket();
+
+// ============================================================
+// [FASE 2] Archivos privados
+// ============================================================
+// Los archivos ya NO se publican (antes: file.makePublic()). Solo se pueden
+// ver desde ARASYS mediante enlaces firmados temporales (obtenerFotos y
+// obtenerUrlArchivo). El campo "url" se guarda vacío en los registros nuevos;
+// la referencia real es "storage_path".
+
+// IDs de orden, ticket y gasto: solo letras, números, "_" y "-".
+// Evita rutas manipuladas (por ejemplo con "/" o "..").
+function validarId(valor, campo) {
+  const id = String(valor || "").trim();
+
+  if (!id) {
+    ERR.invalid(`${campo}_REQUIRED`);
+  }
+
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(id)) {
+    ERR.invalid(`${campo}_INVALID`);
+  }
+
+  return id;
+}
 
 // ============================================================
 // SUBIR FOTO EVIDENCIA ORDEN
 // ============================================================
 
 exports.subirFoto = onCall(async (request) => {
-  requireAuth(request);
+  const staff = await requireStaff(request);
 
   const data = request.data;
 
-  const ordenId = String(data.collection || "").trim();
+  const ordenId = validarId(data.collection, "ORDEN_ID");
 
   const { nombre, base64, mimeType, usuario, email, visible_cliente } =
     data.payload || {};
-
-  if (!ordenId) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "ORDEN_ID_REQUIRED",
-    );
-  }
 
   VALIDATOR.fileName(nombre);
 
@@ -53,9 +72,8 @@ exports.subirFoto = onCall(async (request) => {
     },
   });
 
-  await file.makePublic();
-
-  const url = `https://storage.googleapis.com/${bucket.name}/${path}`;
+  // [FASE 2] Privado: sin makePublic(); se consulta con enlace firmado
+  const url = "";
 
   const id = "OE-" + Date.now();
 
@@ -75,7 +93,7 @@ exports.subirFoto = onCall(async (request) => {
 
       fecha: new Date().toISOString(),
 
-      usuario: usuario || email || "",
+      usuario: usuario || email || staff.nombre || "",
 
       visible_cliente: visible_cliente === true,
 
@@ -98,16 +116,9 @@ exports.subirFoto = onCall(async (request) => {
 // ============================================================
 
 exports.obtenerFotos = onCall(async (request) => {
-  requireAuth(request);
+  await requireStaff(request);
 
-  const ordenId = String(request.data.collection || "").trim();
-
-  if (!ordenId) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "ORDEN_ID_REQUIRED",
-    );
-  }
+  const ordenId = validarId(request.data.collection, "ORDEN_ID");
 
   const snap = await db
     .collection("ordenevidencias")
@@ -162,16 +173,11 @@ exports.obtenerFotos = onCall(async (request) => {
 // ============================================================
 
 exports.subirTicketFile = onCall(async (request) => {
-  console.log(">>> obtenerFotos V2 ejecutándose <<<");
-  requireAuth(request);
+  const staff = await requireStaff(request);
 
   const data = request.data;
 
-  const ticketId = String(data.ticket_id || "").trim();
-
-  if (!ticketId) {
-    throw new Error("TICKET_ID_REQUIRED");
-  }
+  const ticketId = validarId(data.ticket_id, "TICKET_ID");
 
   VALIDATOR.fileName(data.nombre);
 
@@ -196,9 +202,8 @@ exports.subirTicketFile = onCall(async (request) => {
     },
   });
 
-  await file.makePublic();
-
-  const url = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+  // [FASE 2] Privado: sin makePublic(); se consulta con enlace firmado
+  const url = "";
 
   const id = "TA-" + Date.now();
 
@@ -224,9 +229,10 @@ exports.subirTicketFile = onCall(async (request) => {
 
       eliminado: false,
 
-      autor: data.usuario || "",
+      autor: data.usuario || staff.nombre || "",
 
-      autor_tipo: data.autor_tipo || "CLIENTE",
+      // [FASE 2] Solo el personal puede usar esta función
+      autor_tipo: data.autor_tipo || "ARATECH",
     });
 
   return ok({
@@ -243,11 +249,12 @@ exports.subirTicketFile = onCall(async (request) => {
 // ============================================================
 
 exports.eliminarFoto = onCall(async (request) => {
-  requireAuth(request);
+  // [FASE 2] Función desactivada en index.js (fase 0); se protege por si se reactiva
+  await requireStaff(request, ["admin"]);
   const storagePath = String(request.data.storage_path || "").trim();
 
   if (!storagePath) {
-    throw new Error("STORAGE_PATH_REQUIRED");
+    ERR.invalid("STORAGE_PATH_REQUIRED");
   }
 
   const file = bucket.file(storagePath);
@@ -264,21 +271,18 @@ exports.eliminarFoto = onCall(async (request) => {
 // ============================================================
 
 exports.eliminarFotoLogica = onCall(async (request) => {
-  requireAuth(request);
-  const fotoId = String(request.data.foto_id || "").trim();
+  const staff = await requireStaff(request);
+  const fotoId = validarId(request.data.foto_id, "FOTO_ID");
 
-  const usuario = String(request.data.usuario || "").trim();
-
-  if (!fotoId) {
-    throw new Error("FOTO_ID_REQUIRED");
-  }
+  const usuario =
+    String(request.data.usuario || "").trim() || staff.nombre || "";
 
   const ref = db.collection("ordenevidencias").doc(fotoId);
 
   const snap = await ref.get();
 
   if (!snap.exists) {
-    throw new Error("FOTO_NOT_FOUND");
+    ERR.notFound("FOTO_NOT_FOUND");
   }
 
   await ref.update({
@@ -303,21 +307,18 @@ exports.eliminarTicketFile = onCall(
     region: "us-east1",
   },
   async (request) => {
-    requireAuth(request);
-    const id = String(request.data.id || "").trim();
+    const staff = await requireStaff(request);
+    const id = validarId(request.data.id, "FILE_ID");
 
-    const usuario = String(request.data.usuario || "").trim();
-
-    if (!id) {
-      throw new Error("FILE_ID_REQUIRED");
-    }
+    const usuario =
+      String(request.data.usuario || "").trim() || staff.nombre || "";
 
     const ref = db.collection("ticketarchivos").doc(id);
 
     const snap = await ref.get();
 
     if (!snap.exists) {
-      throw new Error("FILE_NOT_FOUND");
+      ERR.notFound("FILE_NOT_FOUND");
     }
 
     await ref.update({
@@ -339,14 +340,11 @@ exports.eliminarTicketFile = onCall(
 // ============================================================
 
 exports.subirGastoFile = onCall(async (request) => {
-  requireAuth(request);
+  // [FASE 2] Gastos: mismos roles que las reglas de Firestore
+  const staff = await requireStaff(request, ["admin", "recepcionista"]);
   const data = request.data;
 
-  const gastoId = String(data.gasto_id || "").trim();
-
-  if (!gastoId) {
-    throw new Error("GASTO_ID_REQUIRED");
-  }
+  const gastoId = validarId(data.gasto_id, "GASTO_ID");
 
   VALIDATOR.fileName(data.nombre);
 
@@ -371,9 +369,8 @@ exports.subirGastoFile = onCall(async (request) => {
     },
   });
 
-  await file.makePublic();
-
-  const url = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+  // [FASE 2] Privado: sin makePublic(); se consulta con enlace firmado
+  const url = "";
 
   const id = "GE-" + Date.now();
 
@@ -393,7 +390,7 @@ exports.subirGastoFile = onCall(async (request) => {
 
       fecha: new Date().toISOString(),
 
-      usuario: data.usuario || "",
+      usuario: data.usuario || staff.nombre || "",
 
       eliminada: false,
 

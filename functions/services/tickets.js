@@ -6,6 +6,7 @@ const ERR = require("../lib/errors");
 const LOG = require("../lib/logger");
 const VALID = require("../lib/validators");
 const FOLIOS = require("../lib/folios");
+const { requireStaff } = require("../lib/auth");
 
 exports.getTicketsCliente = onCall(async (request) => {
   try {
@@ -391,6 +392,9 @@ exports.crearComentarioTicket = onCall(
     region: "us-east1",
   },
   async (request) => {
+    // [FASE 2] Solo personal activo de ARASYS (antes no pedía sesión)
+    const staff = await requireStaff(request);
+
     try {
       const data = request.data;
 
@@ -406,7 +410,7 @@ exports.crearComentarioTicket = onCall(
 
         fecha_hora: new Date().toISOString(),
 
-        autor: data.autor || "Sistema",
+        autor: data.autor || staff.nombre || "Sistema",
 
         autor_tipo: data.autor_tipo || "ARATECH",
 

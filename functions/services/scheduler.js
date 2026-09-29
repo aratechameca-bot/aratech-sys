@@ -1,6 +1,53 @@
 const logger = require("../lib/logger");
 const { db } = require("../lib/firestore");
 const { enviarCorreo, plantillaCorreo, DIR_ARATECH } = require("./mail");
+// [FASE 2] Escapar datos insertados en el HTML de los correos
+const { esc } = require("../lib/html");
+
+// ============================================================
+// [FASE 2] Fechas en hora de México
+// ============================================================
+// Antes: new Date("2026-10-06") se interpreta como medianoche UTC
+// (= 18:00 del día anterior en México). A las 9:00 esto hacía que el aviso
+// de "vence en 7 días" saliera con 8 días, y que la garantía se marcara
+// como Vencida un día antes. Ahora se cuentan días de calendario en México.
+
+const ZONA_MX = "America/Mexico_City";
+
+function fechaMX(d = new Date()) {
+  // Formato YYYY-MM-DD en hora de México
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: ZONA_MX,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+// Días de calendario desde hoy (México) hasta la fecha indicada.
+// 0 = hoy, 7 = dentro de 7 días, negativo = ya pasó. NaN si es inválida.
+function diasHasta(fecha) {
+  const texto = String(fecha || "").trim();
+
+  let ymd;
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(texto)) {
+    ymd = texto.slice(0, 10);
+  } else {
+    const d = new Date(texto);
+
+    if (isNaN(d)) return NaN;
+
+    ymd = fechaMX(d);
+  }
+
+  const [y, m, dd] = ymd.split("-").map(Number);
+  const [hy, hm, hd] = fechaMX().split("-").map(Number);
+
+  return Math.round(
+    (Date.UTC(y, m - 1, dd) - Date.UTC(hy, hm - 1, hd)) / 86400000,
+  );
+}
 
 /**
  * Motor principal de automatizaciones.
@@ -11,19 +58,33 @@ async function ejecutarAutomatizaciones() {
   logger.info("INICIANDO AUTOMATIZACIONES ARATECH");
   logger.info("========================================");
 
-  try {
-    await revisarEquiposSinRecoger();
-    await revisarGarantias();
-    await revisarOrdenesSinMovimiento();
-    await revisarCotizacionesVencidas();
+  // [FASE 2] Cada revisión se ejecuta aunque otra falle
+  const revisiones = [
+    ["Equipos sin recoger", revisarEquiposSinRecoger],
+    ["Garantías", revisarGarantias],
+    ["Órdenes sin movimiento", revisarOrdenesSinMovimiento],
+    ["Cotizaciones vencidas", revisarCotizacionesVencidas],
+  ];
 
-    logger.info("Automatizaciones completadas correctamente.");
-  } catch (error) {
-    logger.error("Error ejecutando automatizaciones:", {
-      error: error.message,
-    });
-    throw error;
+  const fallidas = [];
+
+  for (const [nombre, revisar] of revisiones) {
+    try {
+      await revisar();
+    } catch (error) {
+      fallidas.push(nombre);
+
+      logger.error(`Error en revisión "${nombre}":`, {
+        error: error.message,
+      });
+    }
   }
+
+  if (fallidas.length) {
+    throw new Error("Revisiones con error: " + fallidas.join(", "));
+  }
+
+  logger.info("Automatizaciones completadas correctamente.");
 }
 
 /**
@@ -44,6 +105,8 @@ async function revisarEquiposSinRecoger() {
   for (const doc of snapshot.docs) {
     const orden = doc.data();
 
+    // [FASE 2] Un error con una orden no detiene las demás
+    try {
     logger.info(`--------------------------------`);
     logger.info(`Procesando: ${orden.folio}`);
 
@@ -96,11 +159,11 @@ async function revisarEquiposSinRecoger() {
     const asunto = "Tu equipo te está esperando — ARATECH";
 
     const cuerpo = `
-      <p>Hola <b>${orden.cliente_nombre}</b>,</p>
+      <p>Hola <b>${esc(orden.cliente_nombre)}</b>,</p>
 
       <p>
-        Tu <b>${orden.tipo_equipo} ${orden.modelo}</b>
-        lleva <b>${dias} días</b> listo para entrega.
+        Tu <b>${esc(orden.tipo_equipo)} ${esc(orden.modelo)}</b>
+        lleva <b>${esc(dias)} días</b> listo para entrega.
       </p>
 
       <p>
@@ -108,7 +171,7 @@ async function revisarEquiposSinRecoger() {
       </p>
 
       <p>
-        ${DIR_ARATECH}
+        ${esc(DIR_ARATECH)}
       </p>
     `;
 
@@ -121,6 +184,11 @@ async function revisarEquiposSinRecoger() {
     });
 
     logger.info(`${orden.folio}: correo enviado correctamente`);
+    } catch (error) {
+      logger.error(`${orden.folio}: error en recordatorio`, {
+        error: error.message,
+      });
+    }
   }
 }
 
@@ -139,6 +207,9 @@ async function revisarGarantias() {
   for (const doc of snapshot.docs) {
     const garantia = doc.data();
 
+    // [FASE 2] Un error con una garantía no detiene las demás
+    try {
+
     logger.info("--------------------------------");
     logger.info(`Procesando garantía: ${garantia.folio}`);
 
@@ -149,12 +220,13 @@ async function revisarGarantias() {
 
     const fechaGarantia = new Date(garantia.fecha_gar);
 
-    if (isNaN(fechaGarantia)) {
+    // [FASE 2] Días de calendario en hora de México
+    const diasRestantes = diasHasta(garantia.fecha_gar);
+
+    if (isNaN(fechaGarantia) || isNaN(diasRestantes)) {
       logger.warn(`${garantia.folio}: fecha_gar inválida`);
       continue;
     }
-
-    const diasRestantes = Math.floor((fechaGarantia - hoy) / 86400000);
 
     logger.info(`${garantia.folio}: ${diasRestantes} días restantes`);
 
@@ -183,6 +255,7 @@ async function revisarGarantias() {
       }
 
       const fechaStr = fechaGarantia.toLocaleDateString("es-MX", {
+        timeZone: "UTC", // [FASE 2] la fecha guardada es de calendario (sin hora)
         day: "2-digit",
         month: "long",
         year: "numeric",
@@ -198,19 +271,19 @@ async function revisarGarantias() {
           `
           <p>
             La garantía de
-            <b>${garantia.cliente_nombre}</b>
+            <b>${esc(garantia.cliente_nombre)}</b>
             vence el
-            <b>${fechaStr}</b>.
+            <b>${esc(fechaStr)}</b>.
           </p>
 
           <p>
             Equipo:
-            <b>${garantia.tipo_equipo}</b>
+            <b>${esc(garantia.tipo_equipo)}</b>
           </p>
 
           <p>
             Servicio:
-            <b>${garantia.servicio}</b>
+            <b>${esc(garantia.servicio)}</b>
           </p>
         `,
         ),
@@ -227,14 +300,14 @@ async function revisarGarantias() {
           "Tu garantía está por vencer",
           `
           <p>
-            Hola <b>${garantia.cliente_nombre}</b>.
+            Hola <b>${esc(garantia.cliente_nombre)}</b>.
           </p>
 
           <p>
             Te recordamos que la garantía de tu
-            <b>${garantia.tipo_equipo}</b>
+            <b>${esc(garantia.tipo_equipo)}</b>
             vencerá el
-            <b>${fechaStr}</b>.
+            <b>${esc(fechaStr)}</b>.
           </p>
 
           <p>
@@ -307,12 +380,12 @@ async function revisarGarantias() {
           "Garantía concluida",
           `
           <p>
-            Hola <b>${garantia.cliente_nombre}</b>.
+            Hola <b>${esc(garantia.cliente_nombre)}</b>.
           </p>
 
           <p>
             La garantía correspondiente a tu
-            <b>${garantia.tipo_equipo}</b>
+            <b>${esc(garantia.tipo_equipo)}</b>
             ha concluido el día de hoy.
           </p>
 
@@ -333,7 +406,7 @@ async function revisarGarantias() {
             "Mantenimiento gratuito",
             `
             <p>
-              Hola <b>${garantia.cliente_nombre}</b>.
+              Hola <b>${esc(garantia.cliente_nombre)}</b>.
             </p>
 
             <p>
@@ -357,6 +430,11 @@ async function revisarGarantias() {
       });
 
       logger.info(`${garantia.folio}: estado actualizado a Vencida`);
+    }
+    } catch (error) {
+      logger.error(`${garantia.folio}: error procesando garantía`, {
+        error: error.message,
+      });
     }
   }
 }
@@ -473,7 +551,7 @@ async function revisarOrdenesSinMovimiento() {
             Folio
           </td>
           <td style="padding:8px 12px;color:#FFFFFF;">
-            <b>${orden.folio}</b>
+            <b>${esc(orden.folio)}</b>
           </td>
         </tr>
 
@@ -482,7 +560,7 @@ async function revisarOrdenesSinMovimiento() {
             Cliente
           </td>
           <td style="padding:8px 12px;">
-            ${orden.cliente_nombre}
+            ${esc(orden.cliente_nombre)}
           </td>
         </tr>
 
@@ -491,7 +569,7 @@ async function revisarOrdenesSinMovimiento() {
             Estado
           </td>
           <td style="padding:8px 12px;">
-            <b>${orden.estado}</b>
+            <b>${esc(orden.estado)}</b>
           </td>
         </tr>
 
@@ -500,7 +578,7 @@ async function revisarOrdenesSinMovimiento() {
             Técnico
           </td>
           <td style="padding:8px 12px;">
-            ${orden.tecnico || "Sin asignar"}
+            ${esc(orden.tecnico || "Sin asignar")}
           </td>
         </tr>
 
@@ -509,7 +587,7 @@ async function revisarOrdenesSinMovimiento() {
             Días sin movimiento
           </td>
           <td style="padding:8px 12px;">
-            <b>${dias}</b>
+            <b>${esc(dias)}</b>
           </td>
         </tr>
 
@@ -632,7 +710,7 @@ async function revisarCotizacionesVencidas() {
     const cuerpo = `
       <p>
         La cotización
-        <b>${cot.folio}</b>
+        <b>${esc(cot.folio)}</b>
         ha vencido automáticamente después de
         <b>72 horas</b>.
       </p>
@@ -641,12 +719,12 @@ async function revisarCotizacionesVencidas() {
 
         <tr>
           <td><b>Cliente</b></td>
-          <td>${cot.cliente_nombre}</td>
+          <td>${esc(cot.cliente_nombre)}</td>
         </tr>
 
         <tr>
           <td><b>Total</b></td>
-          <td>$${Number(cot.total || 0).toFixed(2)}</td>
+          <td>$${esc(Number(cot.total || 0).toFixed(2))}</td>
         </tr>
 
         <tr>

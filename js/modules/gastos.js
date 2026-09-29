@@ -126,7 +126,7 @@ function rndGastosTabla(lista) {
       <td style="font-size:11px">
         ${
           g.comprobante_url
-            ? `<a href="${g.comprobante_url}" target="_blank" style="color:var(--accent);text-decoration:none"><i class="ar-icon clip"></i> Ver</a>`
+            ? `<a href="#" data-ref="${escAttr(g.comprobante_url)}" onclick="abrirArchivoPrivado(this.dataset.ref); return false;" style="color:var(--accent);text-decoration:none"><i class="ar-icon clip"></i> Ver</a>`
             : g.referencia
               ? `<span style="color:var(--text3)">${g.referencia}</span>`
               : "—"
@@ -344,7 +344,9 @@ async function subirComprobantesGasto(gastoId) {
       });
 
       if (data?.ok) {
-        archivos.push(data.url);
+        // [FASE 2] Archivo privado: se guarda la ruta interna; se abre con
+        // abrirArchivoPrivado(). Los gastos antiguos conservan su URL.
+        archivos.push(data.storage_path || data.url);
       } else {
         console.error("Error subiendo comprobante:", file.name, data?.error);
         notify("❌ No se pudo subir " + file.name);

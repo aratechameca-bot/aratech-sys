@@ -25,7 +25,7 @@ ETAPA 8.6
   ├── F2  Firebase Hardening (Rules)       ✅
   ├── Fase 0  Estabilización de Functions  ✅
   ├── Fase 1  Auth y operación             ✅
-  ├── Fase 2  Functions + Storage          🔴 Siguiente
+  ├── Fase 2  Functions + Storage          🔴 Lista para publicar
   ├── Fase 3  App Check                    ⏳
   ├── Fase 4  Integridad de datos          ⏳
   ├── Fase 5  Logs y exposición de errores ⏳
@@ -58,14 +58,16 @@ Publicada en producción (reglas y hosting) y probada con usuarios admin y técn
 6. Hosting: se excluyen backend, reglas, logs, docs y borradores de Modular.
 7. Limpieza de datos del navegador al cerrar sesión.
 
-### 🔴 Fase 2 — Functions + Storage (siguiente)
+### 🔴 Fase 2 — Functions + Storage (lista para publicar)
+
+Detalle y orden de publicación en `docs/CAMBIOS-FASE2.md`. Decisiones: archivos privados; recordatorio diario desde el día 7 (sin cambio).
 
 - Funciones de correo (las 6 `notificar*` y `alertaInventarioBajo`): exigir sesión y usuario activo, y escapar el HTML de los datos insertados.
 - Validar rol con `requireRole` (de `lib/auth.js`) en las funciones de ARASYS.
 - `crearComentarioTicket` y `activarPortalCliente`: exigir sesión.
 - `storage.js`: corregir `functions.https.HttpsError`, que no está definido, y validar los IDs usados en las rutas.
 - Storage privado de verdad: quitar `makePublic()` y usar enlaces firmados.
-- Scheduler, revisándolo antes contigo: fechas desfasadas un día por UTC, recordatorio diario sin fin de equipos sin recoger, y que un error no detenga toda la corrida.
+- Scheduler: fechas de garantías en hora de México (antes un día desfasadas) y errores aislados por registro. El recordatorio diario se mantiene.
 
 ### ⏳ Fase 3 — App Check
 
@@ -79,7 +81,6 @@ Publicada en producción (reglas y hosting) y probada con usuarios admin y técn
 - Folios sin sobrescritura: crear falla si el ID ya existe. Agregar `CLI`, `AVI` y `MOV` a `FOLIO_COLS`.
 - Protección XSS: escapar datos de usuario en `innerHTML`.
 - Matriz de permisos por rol, alineando reglas y menús.
-- Registro duplicado de archivos de ticket: `subirTicketFile` crea un registro y el frontend crea otro.
 - Limpieza: `cancelarGarantiasVenta` duplicada y `mailTemplates.js` vacío.
 
 ### ⏳ Fase 5 — Logs y exposición de errores
