@@ -12,17 +12,46 @@ function renderLV() {
     recalcVta();
     return;
   }
-  c.innerHTML = LV.map(
-    (l, i) => `
+  const encabezado = `
+<div style="
+  display:grid;
+  grid-template-columns:1fr 70px 90px 80px 34px;
+  gap:7px;
+  margin-bottom:4px;
+  padding:0 6px;
+  font-size:10px;
+  font-weight:700;
+  color:var(--text3);
+  text-transform:uppercase;
+  letter-spacing:.6px;
+">
+  <div>Concepto</div>
+  <div style="text-align:center">Cantidad</div>
+  <div style="text-align:center">Precio</div>
+  <div style="text-align:right">Total</div>
+  <div></div>
+</div>`;
+  c.innerHTML =
+    encabezado +
+    LV.map(
+      (l, i) => `
     <div style="display:grid;grid-template-columns:1fr 70px 90px 80px 34px;gap:7px;align-items:center;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:5px">
-      <span style="font-size:11px">${l.tipo === "producto" ? "📦" : "🔧"} ${l.desc}${l.sku ? ' <span style="color:var(--text3);font-size:10px">[' + l.sku + "]</span>" : ""}</span>
+      <span style="font-size:11px">
+        ${
+          l.tipo === "producto"
+            ? '<i class="ar-icon inventario"></i>'
+            : '<i class="ar-icon servicio"></i>'
+        }
+        ${l.desc}
+      </span>
       <input type="number" value="${l.qty}" min="1" style="font-size:11px;text-align:center" oninput="onLVqty(${i},this)">
       <input type="number" value="${l.precio}" style="font-size:11px;text-align:right" oninput="onLVprice(${i},this)">
       <span style="font-size:11px;color:var(--green);text-align:right">${mxn((l.qty || 1) * (l.precio || 0))}</span>
       <button class="btn bd bsm" onclick="delLV(${i})">✕</button>
     </div>
   `,
-  ).join("");
+    ).join("");
+  window.refreshIcons(c);
   recalcVta();
 }
 function onLVqty(i, inp) {
@@ -37,14 +66,25 @@ function delLV(i) {
   LV.splice(i, 1);
   renderLV();
 }
+
 function recalcVta() {
   const sub = LV.reduce((a, l) => a + (l.qty || 1) * (l.precio || 0), 0);
+
   const iva = parseFloat(document.getElementById("vta-iva")?.value) || 0;
-  const desc = parseFloat(document.getElementById("vta-desc")?.value) || 0;
-  const tot = Math.max(0, sub * (1 + iva / 100) - desc);
+
+  const tot = sub * (1 + iva / 100);
+
   const el = document.getElementById("vta-tot");
-  if (el) el.textContent = mxn(tot);
-  return { sub, iva, desc, tot };
+
+  if (el) {
+    el.textContent = mxn(tot);
+  }
+
+  return {
+    sub,
+    iva,
+    tot,
+  };
 }
 
 // BÚSQUEDA DE PRODUCTOS
@@ -82,7 +122,10 @@ function buscarProducto(q) {
       .map(
         (p) => `
       <div class="search-sug-item" onclick="selProd('${p.sku}')">
-        <span>📦 ${p.nombre}${p.marca ? " (" + p.marca + ")" : ""} <span style="color:var(--text3);font-size:10px">[${p.sku}]</span></span>
+       <span>
+          <i class="ar-icon inventario"></i>
+          ${p.nombre}${p.marca ? " (" + p.marca + ")" : ""}
+        </span>
         <span style="display:flex;gap:10px;align-items:center">
           <span class="tag ${p.stock <= p.min ? "to" : "tg"}" style="font-size:10px">Stock: ${p.stock}</span>
           <span style="color:var(--green);font-family:var(--fh)">${mxn(p.precio)}</span>
@@ -91,6 +134,7 @@ function buscarProducto(q) {
     `,
       )
       .join("");
+    window.refreshIcons(sug);
     sug.style.display = "block";
   }, 200);
 }
@@ -158,6 +202,98 @@ function addLVS() {
   sel.focus();
 }
 
+// ======================================================
+// BUSCAR CLIENTE
+// ======================================================
+
+function vtaBuscarCliente(texto) {
+  const lista = document.getElementById("vta-cliente-resultados");
+
+  if (!lista) return;
+
+  texto = (texto || "").toLowerCase().trim();
+
+  const clientes = DB.get("clientes") || [];
+
+  const encontrados = clientes.filter((c) => {
+    return (
+      (c.nombre || "").toLowerCase().includes(texto) ||
+      (c.tel || "").toLowerCase().includes(texto)
+    );
+  });
+
+  lista.innerHTML = "";
+
+  encontrados.slice(0, 20).forEach((cliente) => {
+    const item = document.createElement("div");
+
+    item.style.cssText = `
+            padding:10px;
+            cursor:pointer;
+            border-bottom:1px solid rgba(255,255,255,.05);
+        `;
+
+    item.innerHTML = `
+            <div style="font-weight:600">
+                ${cliente.nombre}
+            </div>
+
+            <div style="
+                font-size:11px;
+                color:var(--text2);
+            ">
+                ${cliente.tel || ""}
+            </div>
+        `;
+
+    item.onclick = () => vtaSeleccionarCliente(cliente.id);
+
+    lista.appendChild(item);
+  });
+
+  lista.style.display = encontrados.length ? "block" : "none";
+}
+
+// ======================================================
+// SELECCIONAR CLIENTE
+// ======================================================
+
+function vtaSeleccionarCliente(id) {
+  const cliente = DB.get("clientes").find((c) => c.id === id);
+
+  if (!cliente) return;
+
+  document.getElementById("vta-cliente-id").value = cliente.id;
+
+  document.getElementById("vta-cliente").value = cliente.nombre || "";
+
+  const lista = document.getElementById("vta-cliente-resultados");
+
+  lista.innerHTML = "";
+
+  lista.style.display = "none";
+}
+
+// ======================================================
+// NUEVO CLIENTE
+// ======================================================
+
+function vtaNuevoCliente() {
+  abrirNuevoCliDesdeOrden();
+}
+
+document.addEventListener("click", function (e) {
+  const input = document.getElementById("vta-cliente");
+
+  const lista = document.getElementById("vta-cliente-resultados");
+
+  if (!input || !lista) return;
+
+  if (input.contains(e.target) || lista.contains(e.target)) return;
+
+  lista.style.display = "none";
+});
+
 window.LV = LV;
 
 window.initLV = initLV;
@@ -171,3 +307,7 @@ window.addLVP = addLVP;
 window.buscarProducto = buscarProducto;
 window.selProd = selProd;
 window.addLVS = addLVS;
+
+window.vtaBuscarCliente = vtaBuscarCliente;
+window.vtaSeleccionarCliente = vtaSeleccionarCliente;
+window.vtaNuevoCliente = vtaNuevoCliente;

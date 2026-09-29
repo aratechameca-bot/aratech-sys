@@ -1,74 +1,122 @@
 // ---- HISTORIAL DE ACCESOS ----
 function registrarAcceso(tipo) {
   if (!currentUser) return;
-  const logs = JSON.parse(localStorage.getItem("ara_historial") || "[]");
+
   const now = new Date();
+
   const registro = {
     nombre: currentUser.nombre,
+
     email: currentUser.email,
-    evento: tipo, // 'Inicio de sesión' o 'Cierre de sesión'
+
+    evento: tipo,
+
     fecha: now.toLocaleDateString("es-MX"),
+
     hora: now.toLocaleTimeString("es-MX", {
       hour: "2-digit",
+
       minute: "2-digit",
     }),
   };
-  logs.unshift(registro);
-  // Mantener solo los últimos 500 registros
-  if (logs.length > 500) logs.splice(500);
-  localStorage.setItem("ara_historial", JSON.stringify(logs));
-  // #18: Guardar también en Sheets hoja Accesos
+
   const acceso = {
     id: "ACC-" + Date.now(),
+
     fecha: registro.fecha,
+
     hora: registro.hora,
+
     usuario: registro.nombre,
+
     email: registro.email,
+
     accion: tipo,
   };
-  API.save("accesos", acceso).catch(() => {});
+
+  DATA.save("accesos", acceso.id, acceso).catch(console.error);
 }
 
-function rndHistorial(lista) {
+async function rndHistorial(lista = null) {
   const tb = document.getElementById("tb-historial");
+
   if (!tb) return;
-  const logs =
-    lista || JSON.parse(localStorage.getItem("ara_historial") || "[]");
-  // Poblar filtro de usuarios
+
+  let logs = lista;
+
+  if (!logs) {
+    try {
+      logs = await DATA.getAll("accesos");
+    } catch (err) {
+      console.error(err);
+
+      logs = [];
+    }
+  }
+
+  logs = (logs || []).sort((a, b) => {
+    const fa = new Date(`${a.fecha} ${a.hora}`);
+
+    const fb = new Date(`${b.fecha} ${b.hora}`);
+
+    return fb - fa;
+  });
+
   const uSel = document.getElementById("hist-usuario");
-  if (uSel && uSel.options.length <= 1) {
-    const emails = [
-      ...new Set(
-        JSON.parse(localStorage.getItem("ara_historial") || "[]").map(
-          (l) => l.email,
-        ),
-      ),
-    ];
-    emails.forEach((e) => {
-      const u = USUARIOS.find((x) => x.email === e);
+
+  if (uSel) {
+    uSel.innerHTML = '<option value="">— Todos los usuarios —</option>';
+
+    [...new Set(logs.map((l) => l.email))].sort().forEach((email) => {
+      const log = logs.find((x) => x.email === email);
 
       const opt = document.createElement("option");
 
-      opt.value = e;
+      opt.value = email;
 
-      opt.textContent = u ? u.nombre : e;
+      opt.textContent = log?.usuario || email;
 
       uSel.appendChild(opt);
     });
   }
+
   if (!logs.length) {
     tb.innerHTML = '<tr><td colspan="5" class="nd">Sin registros aún</td></tr>';
+
     return;
   }
+
   tb.innerHTML = logs
     .map(
-      (l) => `<tr>
-    <td><b>${l.nombre}</b></td>
-    <td style="font-size:11px;color:var(--text3)">${l.email}</td>
-    <td><span class="tag ${l.evento.includes("Inicio") ? "tg" : "tr"}" style="font-size:10px">${l.evento}</span></td>
-    <td style="font-size:11px">${l.fecha}</td>
-    <td style="font-size:11px">${l.hora}</td>
-  </tr>`,
+      (l) => `
+
+    <tr>
+
+      <td><b>${l.usuario || ""}</b></td>
+
+      <td style="font-size:11px;color:var(--text3)">
+
+        ${l.email || ""}
+
+      </td>
+
+      <td>
+
+        <span class="tag ${(l.accion || "").includes("Inicio") ? "tg" : "tr"}">
+
+          ${l.accion || ""}
+
+        </span>
+
+      </td>
+
+      <td>${l.fecha || ""}</td>
+
+      <td>${l.hora || ""}</td>
+
+    </tr>
+
+  `,
     )
     .join("");
 }
@@ -94,8 +142,17 @@ function filtHistorial() {
   rndHistorial(logs);
 }
 
-function limpiarHistorial() {
-  if (!confirm("¿Eliminar todo el historial de accesos?")) return;
+async function limpiarHistorial() {
+  const ok = await ARABOT.confirm({
+    title: "Limpiar historial",
+
+    message: "¿Deseas eliminar todo el historial de accesos?",
+
+    details:
+      "Se eliminarán todos los registros almacenados localmente. Esta acción no podrá deshacerse.",
+  });
+
+  if (!ok) return;
   localStorage.removeItem("ara_historial");
   rndHistorial();
   notify("Historial limpiado ✅");

@@ -121,7 +121,11 @@ function dash() {
         )
         .join("")
     : '<div class="al al-g">✅ Sin alertas activas</div>';
-  document.getElementById("alert-bar").style.display = alr.length ? "" : "none";
+  const alertBar = document.getElementById("alert-bar");
+
+  if (alertBar) {
+    alertBar.style.display = alr.length ? "" : "none";
+  }
   // chart
   const hD = new Date();
   const ms = [];
@@ -169,10 +173,235 @@ function dash() {
         .join("")
     : '<div class="nd">Sin pendientes hoy</div>';
 
+  // ======================================================
+  // KPIs del Motor de Inventario
+  // ======================================================
+
+  const inventario = DB.get("inventario");
+
+  const valorInventario = inventario.reduce(
+    (a, p) => a + Number(p.valor_inventario || 0),
+    0,
+  );
+
+  const valorVenta = inventario.reduce(
+    (a, p) => a + Number(p.valor_venta || 0),
+    0,
+  );
+
+  const utilidadPotencial = inventario.reduce(
+    (a, p) => a + Number(p.utilidad_potencial || 0),
+    0,
+  );
+
+  const productosCriticos = inventario.filter((p) =>
+    ["STOCK_BAJO", "AGOTADO"].includes(p.estado_inventario),
+  ).length;
+
+  const elInvValor = document.getElementById("dash-inv-valor");
+
+  if (elInvValor) {
+    elInvValor.textContent = mxn(valorInventario);
+  }
+
+  const elInvVenta = document.getElementById("dash-inv-venta");
+
+  if (elInvVenta) {
+    elInvVenta.textContent = mxn(valorVenta);
+  }
+
+  const elInvUtilidad = document.getElementById("dash-inv-utilidad");
+
+  if (elInvUtilidad) {
+    elInvUtilidad.textContent = mxn(utilidadPotencial);
+  }
+
+  const elInvCriticos = document.getElementById("dash-inv-criticos");
+
+  if (elInvCriticos) {
+    elInvCriticos.textContent = productosCriticos;
+  }
+
+  // ==========================================
+  // KPI - Ticket promedio
+  // ==========================================
+
+  const ventas = DB.get("ventas") || [];
+
+  const ventasValidas = ventas.filter((v) => v.estado !== "CANCELADA");
+
+  const ticketPromedio = ventasValidas.length
+    ? ventasValidas.reduce((a, v) => a + Number(v.total || 0), 0) /
+      ventasValidas.length
+    : 0;
+
+  document.getElementById("dash-ticket-promedio").textContent =
+    mxn(ticketPromedio);
+
+  // ==========================================
+  // KPI - Productos vendidos
+  // ==========================================
+
+  const productosVendidos = ventasValidas.reduce((total, venta) => {
+    return (
+      total +
+      (venta.lineas || []).reduce((suma, linea) => {
+        if (linea.tipo !== "producto") return suma;
+
+        return suma + Number(linea.qty || 0);
+      }, 0)
+    );
+  }, 0);
+
+  document.getElementById("dash-productos-vendidos").textContent =
+    productosVendidos;
+
+  // ==========================================
+  // KPI - Compras realizadas (Mes)
+  // ==========================================
+
+  const hoyFecha = new Date();
+
+  const comprasMes = (DB.get("ordenes_compra") || [])
+    .filter((oc) => {
+      if (
+        oc.estado !== "Recibida completa" &&
+        oc.estado !== "Recibida parcial"
+      ) {
+        return false;
+      }
+
+      if (!oc.fecha) return false;
+
+      const f = new Date(oc.fecha);
+
+      return (
+        f.getMonth() === hoyFecha.getMonth() &&
+        f.getFullYear() === hoyFecha.getFullYear()
+      );
+    })
+    .reduce((t, oc) => t + Number(oc.total || 0), 0);
+
+  document.getElementById("dash-compras-mes").textContent = mxn(comprasMes);
+
+  // ==========================================
+  // KPI - Margen promedio
+  // ==========================================
+
+  const invMargen = DB.get("inventario") || [];
+
+  let ventaTotalMargen = 0;
+
+  let utilidadTotalMargen = 0;
+
+  ventasValidas.forEach((venta) => {
+    (venta.lineas || []).forEach((linea) => {
+      if (linea.tipo !== "producto") return;
+
+      const prod = invMargen.find((p) => p.sku === linea.sku);
+
+      if (!prod) return;
+
+      const precioVenta = Number(linea.precio || 0);
+
+      const costo = Number(prod.costo || 0);
+
+      const cantidad = Number(linea.qty || 0);
+
+      ventaTotalMargen += precioVenta * cantidad;
+
+      utilidadTotalMargen += (precioVenta - costo) * cantidad;
+    });
+  });
+
+  const margenPromedio =
+    ventaTotalMargen > 0 ? (utilidadTotalMargen / ventaTotalMargen) * 100 : 0;
+
+  document.getElementById("dash-margen-promedio").textContent =
+    margenPromedio.toFixed(1) + "%";
+
   // ── Nuevas métricas del dashboard ──
   dashServicios(ords);
+
   dashEstados(ords);
+
   dashExtra(ords, clis);
+
+  dashStockCritico();
+
+  dashTopInventario();
+
+  dashMovimientosInventario();
+
+  actualizarBadgeOrdenes();
+
+  actualizarBadgeInventario();
+
+  actualizarBadgeTickets();
+}
+
+function dashMovimientosInventario() {
+  const el = document.getElementById("dash-movimientos");
+
+  if (!el) return;
+
+  const movs = (DB.get("inventario_movimientos") || [])
+
+    .slice()
+
+    .reverse()
+
+    .slice(0, 10);
+
+  if (!movs.length) {
+    el.innerHTML = '<div class="nd">Sin movimientos registrados</div>';
+
+    return;
+  }
+
+  el.innerHTML = movs
+    .map(
+      (m) => `
+
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+
+<div>
+
+<div style="font-weight:600">
+
+${m.nombre}
+
+</div>
+
+<div style="font-size:11px;color:var(--text3)">
+
+${m.tipo} · ${m.documento || "—"}
+
+</div>
+
+</div>
+
+<div style="text-align:right">
+
+<div style="font-family:var(--fh)">
+
+${m.cantidad}
+
+</div>
+
+<div style="font-size:11px;color:var(--text3)">
+
+${m.fecha}
+
+</div>
+
+</div>
+
+</div>
+
+`,
+    )
+    .join("");
 }
 
 function dashServicios(ords) {
@@ -310,6 +539,99 @@ function updBadges() {
 }
 function goAlert() {
   document.querySelector('[data-panel="dashboard"]').click();
+}
+
+function dashStockCritico() {
+  const el = document.getElementById("dash-stock-critico");
+
+  if (!el) return;
+
+  const lista = DB.get("inventario")
+    .filter((p) => ["STOCK_BAJO", "AGOTADO"].includes(p.estado_inventario))
+    .sort((a, b) => a.stock - b.stock)
+    .slice(0, 8);
+
+  if (!lista.length) {
+    el.innerHTML = '<div class="nd">✅ Sin productos críticos</div>';
+
+    return;
+  }
+
+  el.innerHTML = lista
+    .map(
+      (p) => `
+
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+
+<div>
+
+<div style="font-weight:600">${p.nombre}</div>
+
+<div style="font-size:11px;color:var(--text3)">${p.sku}</div>
+
+</div>
+
+<div>
+
+<span class="tag ${p.stock <= 0 ? "trd" : "to"}">
+
+${p.stock} ${p.unidad}
+
+</span>
+
+</div>
+
+</div>
+
+`,
+    )
+    .join("");
+}
+
+function dashTopInventario() {
+  const el = document.getElementById("dash-top-inventario");
+
+  if (!el) return;
+
+  const lista = DB.get("inventario")
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(b.valor_inventario || 0) - Number(a.valor_inventario || 0),
+    )
+    .slice(0, 8);
+
+  if (!lista.length) {
+    el.innerHTML = '<div class="nd">Sin datos</div>';
+
+    return;
+  }
+
+  el.innerHTML = lista
+    .map(
+      (p) => `
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+
+    <div>
+
+        <div style="font-weight:600">${p.nombre}</div>
+
+        <div style="font-size:11px;color:var(--text3)">
+            ${p.stock} ${p.unidad}
+        </div>
+
+    </div>
+
+    <div style="color:var(--green);font-family:var(--fh)">
+
+        ${mxn(Number(p.valor_inventario || 0))}
+
+    </div>
+
+</div>
+`,
+    )
+    .join("");
 }
 
 window.calcIngresosMes = calcIngresosMes;

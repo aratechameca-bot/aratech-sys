@@ -1,3 +1,19 @@
+// ======================================
+// CONTEXTO DE CREACIÓN DE ÓRDENES
+// ======================================
+
+window.ordenContext = {
+  tipo: "NORMAL",
+  garantia: null,
+};
+
+function resetOrdenContext() {
+  window.ordenContext = {
+    tipo: "NORMAL",
+    garantia: null,
+  };
+}
+
 // LINEAS SERVICIO ORDEN
 let LS = [];
 function initLS() {
@@ -56,43 +72,46 @@ function recalcOrd() {
   return tot;
 }
 
-function delOrd(id) {
+async function delOrd(id) {
   if (!puedo("eliminarOrdenes")) {
     notify("❌ Sin permisos");
     return;
   }
+
   const ords = DB.get("ordenes");
   const ord = ords.find((o) => o.id === id);
+
   if (!ord) {
     notify("Orden no encontrada");
     return;
   }
-  if (
-    !confirm(
-      "¿Eliminar la orden " +
-        ord.folio +
-        " de " +
-        ord.cliente_nombre +
-        "?\nEsta acción no se puede deshacer.",
-    )
-  )
-    return;
-  const nuevas = ords.filter((o) => o.id !== id);
-  DB.set("ordenes", nuevas);
+
+  const ok = await ARABOT.confirm({
+    title: "Eliminar Orden de Servicio",
+
+    message: "¿Deseas eliminar la Orden " + ord.folio + "?",
+
+    details:
+      "Cliente: " +
+      ord.cliente_nombre +
+      "<br><br>" +
+      "La Orden de Servicio será eliminada permanentemente y esta acción no podrá deshacerse.",
+  });
+
+  if (!ok) return;
+
   try {
-    const params = new URLSearchParams({
-      action: "delete",
-      collection: "ordenes",
-      id,
-    });
-    fetch(APPS_SCRIPT_URL + "?" + params.toString(), {
-      method: "GET",
-      redirect: "follow",
-    }).catch(() => {});
-  } catch (e) {}
+    await DATA.delete("ordenes", id);
+  } catch (e) {
+    console.error(e);
+    notify("❌ Error al eliminar la orden");
+    return;
+  }
+
   rndOrd();
   dash();
   updBadges();
+
   notify("🗑️ Orden " + ord.folio + " eliminada");
 }
 

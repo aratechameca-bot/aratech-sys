@@ -4,10 +4,32 @@ function rndCfg() {
   document.getElementById("tb-cat").innerHTML = cat
     .map(
       (s, i) =>
-        `<tr><td style="font-size:11px">${s.nombre}</td><td style="color:var(--green)">${s.precio > 0 ? mxn(s.precio) : "Gratis"}</td><td>${s.garantia > 0 ? s.garantia + " días" : "Sin garantía"}</td><td><button class="btn bg bsm" onclick="editSvcPrecio(${i})" title="Editar precio">$</button><button class="btn bs bsm" onclick="verHistorialPrecio(${i})" title="Ver historial">📈</button><button class="btn bd bsm" onclick="delSvc(${i})">✕</button></td></tr>`,
+        `<tr><td style="font-size:11px">${s.nombre}</td><td style="color:var(--green)">${s.precio > 0 ? mxn(s.precio) : "Gratis"}</td><td>${s.garantia > 0 ? s.garantia + " días" : "Sin garantía"}</td><td><button 
+    class="btn bg bsm" 
+    onclick="editSvcPrecio(${i})" 
+    title="Editar precio">
+    <i class="ar-icon dinero"></i>
+</button>
+
+<button 
+    class="btn bs bsm" 
+    onclick="verHistorialPrecio(${i})" 
+    title="Ver historial">
+    <i class="ar-icon historial"></i>
+</button>
+
+<button 
+    class="btn bd bsm" 
+    onclick="delSvc(${i})"
+    title="Eliminar">
+    <i class="ar-icon delete"></i>
+</button>
+
+</td></tr>`,
     )
     .join("");
-  const cf = DB.obj("config");
+  window.refreshIcons(document.getElementById("tb-cat"));
+  const cf = DB.obj("config", {});
   const map = {
     "cfg-nm": "nombre",
     "cfg-sl": "slogan",
@@ -25,68 +47,169 @@ function rndCfg() {
   };
   Object.entries(map).forEach(([eid, k]) => {
     const el = document.getElementById(eid);
-    if (el && cf[k]) el.value = cf[k];
+
+    if (el && cf[k] !== undefined) {
+      el.value = cf[k];
+    }
   });
+
+  // Cargar usuarios (solo administradores)
+  rndUsuarios();
 }
-function addSvc() {
-  const nm = document.getElementById("ns-nm").value.trim();
-  if (!nm) return;
+async function addSvc() {
+  const nm = normalizarTexto(document.getElementById("ns-nm").value);
+
+  if (!nm) {
+    ARABOT.alert({
+      title: "Nombre requerido",
+
+      message: "Ingresa el nombre del servicio.",
+
+      details: "Este campo es obligatorio para registrar un servicio.",
+    });
+
+    return;
+  }
   const cat = DB.get("cat");
   const precio = parseFloat(document.getElementById("ns-pr").value) || 0;
+  const garantia = parseInt(document.getElementById("ns-ga").value) || 0;
+
+  const descripcion = normalizarTexto(
+    document.getElementById("ns-ds")?.value || "",
+  );
+
+  if (precio < 0 || garantia < 0) {
+    ARABOT.alert({
+      title: "Valores inválidos",
+
+      message: "Precio y garantía no pueden ser negativos.",
+
+      details: "Corrige los valores antes de guardar.",
+    });
+
+    return;
+  }
+
+  if (nm.length > 150 || descripcion.length > 500) {
+    ARABOT.alert({
+      title: "Texto demasiado largo",
+
+      message: "El nombre o la descripción exceden el límite permitido.",
+
+      details: "Nombre: 150 caracteres. Descripción: 500 caracteres.",
+    });
+
+    return;
+  }
   const id = "SVC-" + Date.now();
   const svc = {
     id,
     nombre: nm,
     precio,
-    garantia: parseInt(document.getElementById("ns-ga").value) || 0,
-    descripcion: document.getElementById("ns-ds")?.value || "",
+    garantia,
+    descripcion,
     historialPrecios: [
       { precio, fecha: hoy(), usuario: currentUser?.nombre || "Sistema" },
     ],
   };
   cat.push(svc);
   DB.set("cat", cat);
-  API.save("cat", svc);
+  await DATA.save("cat", svc.id, svc);
   ["ns-nm", "ns-pr", "ns-ga", "ns-ds"].forEach((f) => {
     const e = document.getElementById(f);
     if (e) e.value = "";
   });
   rndCfg();
+
+  // Si el modal fue abierto desde Cotizaciones
+  if (window.cotEsperandoServicio) {
+    window.cotEsperandoServicio = false;
+
+    cotSeleccionarServicio(svc.id);
+  }
+
+  closeM("m-servicio");
+
   notify("Servicio agregado ✅");
 }
-function delSvc(i) {
-  if (!confirm("¿Eliminar?")) return;
+
+async function delSvc(i) {
+  const ok = await ARABOT.confirm({
+    title: "Eliminar servicio",
+
+    message: "¿Deseas eliminar este servicio?",
+
+    details:
+      "El servicio será eliminado del catálogo y esta acción no podrá deshacerse.",
+  });
+
+  if (!ok) return;
   const cat = DB.get("cat");
+  const existe = cat.find(
+    (s) => String(s.nombre).trim().toLowerCase() === nm.toLowerCase(),
+  );
+
+  if (existe) {
+    ARABOT.alert({
+      title: "Servicio duplicado",
+
+      message: "Ya existe un servicio con ese nombre.",
+
+      details: "Edita el servicio existente en lugar de crear uno nuevo.",
+    });
+
+    return;
+  }
   const svc = cat[i];
   cat.splice(i, 1);
   DB.set("cat", cat);
-  if (svc?.id) API.delete("cat", svc.id);
+  if (svc?.id) await DATA.delete("cat", svc.id);
   rndCfg();
 }
-function saveConf() {
+async function saveConf() {
   const cf = {
+    id: "config",
+
     nombre: document.getElementById("cfg-nm").value,
+
     slogan: document.getElementById("cfg-sl").value,
+
     tel: document.getElementById("cfg-tel").value,
+
     ig: document.getElementById("cfg-ig").value,
+
     dir: document.getElementById("cfg-dir").value,
+
     em: document.getElementById("cfg-em").value,
+
     cfg_gn: document.getElementById("cfg-gn").value,
+
     cfg_gu: document.getElementById("cfg-gu").value,
+
     cfg_gr: document.getElementById("cfg-gr").value,
+
     cfg_gh: document.getElementById("cfg-gh").value,
+
     cfg_ga: document.getElementById("cfg-ga").value,
+
     cfg_ma: document.getElementById("cfg-ma").value,
+
     cfg_pv: document.getElementById("cfg-pv").value,
   };
+
+  // Actualizar caché local
   DB.sobj("config", cf);
+
+  // Persistir en Firestore
+  await DATA.saveDoc("config", "config", cf);
+
   notify("Configuración guardada ✅");
 }
 
 // ============================================================
 // HISTORIAL DE PRECIOS — Catálogo de servicios
 // ============================================================
-function editSvcPrecio(i) {
+async function editSvcPrecio(i) {
   const cat = DB.get("cat");
   const svc = cat[i];
   if (!svc) return;
@@ -116,7 +239,7 @@ function editSvcPrecio(i) {
 
   cat[i] = svc;
   DB.set("cat", cat);
-  API.save("cat", svc);
+  await DATA.update("cat", svc.id, svc);
   rndCfg();
   notify(`Precio actualizado a ${mxn(nuevo)} ✅`);
 }

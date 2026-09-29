@@ -2,7 +2,14 @@
 function exp(tipo) {
   const d = DB.get(tipo);
   if (!d.length) {
-    alert("Sin datos");
+    ARABOT.alert({
+      title: "Sin datos",
+
+      message: "No existen registros para exportar.",
+
+      details: "Agrega información antes de generar el archivo CSV.",
+    });
+
     return;
   }
   const h = Object.keys(d[0]);
@@ -15,75 +22,208 @@ function exp(tipo) {
   a.download = "ARATECH_" + tipo + "_" + hoy() + ".csv";
   a.click();
 }
-function expBak() {
-  const b = {
-    ordenes: DB.get("ordenes"),
-    ventas: DB.get("ventas"),
-    clientes: DB.get("clientes"),
-    inventario: DB.get("inventario"),
-    garantias: DB.get("garantias"),
-    segs: DB.get("segs"),
-    cat: DB.get("cat"),
-    config: DB.obj("config"),
+// ============================================================
+// EXPORTAR RESPALDO COMPLETO
+// ============================================================
+
+async function expBak() {
+  const backup = {
     fecha: new Date().toISOString(),
+
+    version: window.ARATECH?.VERSION || "desconocida",
+
+    sistema: window.ARATECH?.NAME || "ARATECH-SYS",
+
+    colecciones: {},
   };
+
+  for (const nombre of Object.values(window.COLLECTIONS)) {
+    try {
+      if (nombre === "config" || nombre === "folios") {
+        backup.colecciones[nombre] = await DATA.getDoc(nombre, nombre);
+      } else {
+        backup.colecciones[nombre] = await DATA.getAll(nombre);
+      }
+    } catch (err) {
+      console.warn("No fue posible exportar:", nombre, err);
+
+      backup.colecciones[nombre] = null;
+    }
+  }
+
   const a = document.createElement("a");
+
   a.href =
     "data:application/json;charset=utf-8," +
-    encodeURIComponent(JSON.stringify(b, null, 2));
-  a.download = "ARATECH_backup_" + hoy() + ".json";
+    encodeURIComponent(JSON.stringify(backup, null, 2));
+
+  a.download =
+    "ARATECH_BACKUP_" + new Date().toISOString().substring(0, 10) + ".json";
+
   a.click();
-  notify("Respaldo exportado ✅");
+
+  notify("✅ Respaldo completo generado.");
 }
-function impBak(e) {
+
+// TODO ETAPA FIREBASE:
+// importar directamente mediante DATA.importBackup()
+
+async function impBak(e) {
   const f = e.target.files[0];
   if (!f) return;
+
   const r = new FileReader();
-  r.onload = (ev) => {
+
+  r.onload = async (ev) => {
     try {
-      const b = JSON.parse(ev.target.result);
-      if (!confirm("¿Importar? Se reemplazarán los datos actuales.")) return;
-      [
-        "ordenes",
-        "ventas",
-        "clientes",
-        "inventario",
-        "garantias",
-        "segs",
-        "cat",
-      ].forEach((k) => {
-        if (b[k]) DB.set(k, b[k]);
+      const backup = JSON.parse(ev.target.result);
+
+      // ==========================================================
+      // VALIDAR RESPALDO
+      // ==========================================================
+
+      if (
+        !backup ||
+        !backup.colecciones ||
+        typeof backup.colecciones !== "object"
+      ) {
+        ARABOT.error({
+          title: "Respaldo inválido",
+          message: "El archivo seleccionado no pertenece a ARATECH-SYS.",
+          details: "El formato del respaldo no es compatible con esta versión.",
+        });
+        return;
+      }
+
+      const ok = await ARABOT.confirm({
+        title: "Restaurar respaldo",
+        message: "¿Deseas restaurar este respaldo completo?",
+        details:
+          "Toda la información actual será reemplazada por la contenida en el archivo.",
       });
-      if (b.config) DB.sobj("config", b.config);
-      rndOrd();
-      rndVta();
-      rndCli();
-      rndInv();
-      rndGar();
-      dash();
-      updBadges();
-      notify("Respaldo importado ✅ — Sincronizando con Sheets…");
-      if (_syncEnabled) API.importBackup(b);
-    } catch {
-      alert("Archivo inválido");
+
+      if (!ok) return;
+
+      ARABOT.loading({
+        title: "Restaurando respaldo",
+        message: "Procesando colecciones...",
+      });
+
+      const colecciones = Object.entries(backup.colecciones);
+
+      let totalDocs = 0;
+
+      // ==========================================================
+      // RESTAURAR COLECCIONES
+      // ==========================================================
+
+      for (const [coleccion, datos] of colecciones) {
+        if (datos == null) continue;
+
+        // Documentos únicos
+        if (coleccion === "config" || coleccion === "folios") {
+          await DATA.saveDoc(coleccion, coleccion, datos);
+          continue;
+        }
+
+        if (!Array.isArray(datos)) continue;
+
+        // Limpiar colección antes de restaurar
+        await DATA.clearCollection(coleccion);
+
+        // Restaurar documentos
+        for (const registro of datos) {
+          const id = registro.id || registro.email || registro.folio;
+
+          if (!id) continue;
+
+          await DATA.saveDoc(coleccion, id, registro);
+
+          totalDocs++;
+        }
+      }
+
+      ARABOT.close();
+
+      // ==========================================================
+      // RECARGAR SISTEMA
+      // ==========================================================
+
+      try {
+        if (typeof rndOrd === "function") rndOrd();
+        if (typeof rndCli === "function") rndCli();
+        if (typeof rndVta === "function") rndVta();
+        if (typeof rndInv === "function") rndInv();
+        if (typeof rndGar === "function") rndGar();
+        if (typeof rndCot === "function") rndCot();
+        if (typeof rndTickets === "function") rndTickets();
+        if (typeof dash === "function") dash();
+        if (typeof updBadges === "function") updBadges();
+      } catch (err) {
+        console.warn("Error actualizando interfaz:", err);
+      }
+
+      notify(`✅ Respaldo restaurado correctamente (${totalDocs} registros)`);
+    } catch (err) {
+      console.error(err);
+
+      ARABOT.error({
+        title: "Importación fallida",
+        message: "No fue posible restaurar el respaldo.",
+        details: err.message,
+      });
     }
   };
+
   r.readAsText(f);
 }
-
+// NOTIFY
 // NOTIFY
 function notify(msg) {
-  const n = document.createElement("div");
-  n.style.cssText =
-    "position:fixed;bottom:22px;right:22px;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--green);color:var(--text);padding:11px 18px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 18px rgba(0,0,0,.4);transition:opacity .3s";
-  n.textContent = msg;
-  document.body.appendChild(n);
-  setTimeout(() => {
-    n.style.opacity = "0";
-    setTimeout(() => n.remove(), 300);
-  }, 3000);
+  ARABOT.success({
+    title: "ARATECH-SYS",
+
+    message: msg,
+
+    details: "Presiona ENTER o toca cualquier parte para continuar.",
+  });
 }
 
+// ============================================================
+// MINI NOTIFICACIÓN
+// ============================================================
+function notifyMini(msg) {
+  const old = document.querySelector(".ara-mini-toast");
+
+  if (old) {
+    old.remove();
+  }
+
+  const n = document.createElement("div");
+
+  n.className = "ara-mini-toast";
+
+  n.innerHTML = `
+    <span>🟢</span>
+    <span>${msg}</span>
+  `;
+
+  document.body.appendChild(n);
+
+  requestAnimationFrame(() => {
+    n.classList.add("show");
+  });
+
+  setTimeout(() => {
+    n.classList.remove("show");
+
+    setTimeout(() => {
+      if (n.parentNode) {
+        n.remove();
+      }
+    }, 250);
+  }, 2200);
+}
 // COTIZADOR (original logic)
 function formatMXN(m) {
   return new Intl.NumberFormat("es-MX", {
@@ -120,6 +260,19 @@ function procesarSistema() {
   if (lbl) lbl.innerText = "Utilidad del " + Math.round(margenPct * 100) + "%";
   document.getElementById("precio-contado").innerText = formatMXN(pCo);
   document.getElementById("utilidad-contado").innerText = "+" + formatMXN(uCo);
+
+  // ===========================================
+  // PRECIOS CON IVA (VISUAL)
+  // ===========================================
+
+  const efIVA = document.getElementById("precio-efectivo-iva");
+  const coIVA = document.getElementById("precio-contado-iva");
+  const msiIVA = document.getElementById("precio-msi-iva");
+
+  if (efIVA) efIVA.innerText = formatMXN(pEf * 1.16);
+  if (coIVA) coIVA.innerText = formatMXN(pCo * 1.16);
+  if (msiIVA) msiIVA.innerText = formatMXN(pMsi * 1.16);
+
   if (costo === 0 || pMsi <= 4000) {
     tm.classList.add("bloqueada");
     tiMsi.style.color = "var(--alert-red)";
@@ -140,10 +293,10 @@ function procesarSistema() {
   }
 }
 
-window.USUARIOS = [];
-
 // INIT
-function init() {
+async function init() {
+  initIcons();
+
   initCat();
 
   document.getElementById("tdate").textContent = new Date().toLocaleDateString(
@@ -156,67 +309,43 @@ function init() {
     },
   );
 
+  // Dashboard
   dash();
+
   updBadges();
+
   genQR();
+
   procesarSistema();
 
   // Poblar campo de URL si existe
   setTimeout(() => {
-    const urlInput = document.getElementById("sheets-url");
-
-    if (urlInput) {
-      urlInput.value =
-        APPS_SCRIPT_URL !== "TU_URL_AQUI"
-          ? APPS_SCRIPT_URL
-          : localStorage.getItem("ara_sheets_url") || "";
-    }
-
     if (currentUser?.rol === "admin" && typeof rndUsuarios === "function") {
       rndUsuarios();
     }
   }, 300);
 
-  // Cargar usuarios primero
-  API.call("getAll", "usuarios")
+  // ==========================================================
+  // AUTENTICACIÓN
+  // ==========================================================
 
-    .then((usuarios) => {
-      window.USUARIOS = usuarios || [];
-
-      console.log("Usuarios cargados:", window.USUARIOS.length);
-
-      // Después cargar el resto
-      API.loadAll();
-    })
-
-    .catch((err) => {
-      console.error("Error cargando usuarios:", err);
-
-      API.loadAll();
-    });
-}
-
-// Google GSI se inicializa cuando carga el script
-window.onload = () => {
-  if (typeof google !== "undefined" && google.accounts) {
-    initGoogleAuth();
-  } else {
-    // Esperar a que cargue el script de Google
-    const script = document.querySelector('script[src*="accounts.google.com"]');
-    if (script) {
-      script.addEventListener("load", initGoogleAuth);
-    } else {
-      // Fallback: modo local sin login
-      autenticar({
-        nombre: "Usuario Local",
-        email: "",
-        rol: "admin",
-        avatar: "",
-        exp: Date.now() + 86400000,
-      });
+  if (window.DEV_MODE) {
+    if (!window.currentUser) {
+      loginLocal();
     }
+    return;
   }
-};
+
+  try {
+    const result = await FB.auth.getRedirectResult();
+
+    if (result.user) {
+      await procesarUsuarioFirebase(result);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
 
 window.exp = exp;
 window.expBak = expBak;

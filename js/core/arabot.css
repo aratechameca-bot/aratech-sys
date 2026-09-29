@@ -1,0 +1,857 @@
+/*
+========================================================
+
+ARABOT UI FRAMEWORK
+Version 1.0
+
+Core del Ecosistema ARATECH
+
+========================================================
+*/
+/* ====================================================== */
+/* OVERLAY */
+/* ====================================================== */
+
+#arabot-overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    background:var(--arabot-bg);
+
+    backdrop-filter:blur(var(--arabot-blur));
+
+    z-index:999999;
+
+}
+
+/* ====================================================== */
+
+.arabot-hidden{
+
+    visibility:hidden;
+
+    opacity:0;
+
+    pointer-events:none;
+
+}
+
+/* ====================================================== */
+
+.arabot-visible{
+
+    visibility:visible;
+
+    opacity:1;
+
+    pointer-events:auto;
+
+    transition:.25s;
+
+}
+
+
+#arabot-dialog{
+
+    width:min(92vw,540px);
+
+    background:var(--arabot-card);
+
+    border:1px solid var(--arabot-border);
+
+    border-radius:20px;
+
+    box-shadow:var(--arabot-shadow);
+
+    padding: 36px;
+
+    text-align:center;
+
+    transform:translateY(12px) scale(.94);
+
+    opacity:0;
+
+    transition:
+
+        transform .28s cubic-bezier(.2,.8,.2,1),
+
+        opacity .22s ease,
+
+        box-shadow .25s ease;
+    
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+#arabot-icon{
+
+    width:64px;
+
+    height:64px;
+
+    object-fit:contain;
+
+    margin:auto;
+
+    display:block;
+
+    opacity:0;
+
+    transform:scale(.82);
+
+    transition:
+        transform .28s ease,
+        opacity .28s ease;
+
+    will-change:
+    transform,
+    opacity;
+
+}
+
+#arabot-title{
+
+    margin-top:18px;
+
+    font-size:28px;
+
+    font-weight:700;
+
+    letter-spacing:-.5px;
+
+}
+
+#arabot-message{
+
+    margin-top:18px;
+
+    font-size:18px;
+
+    line-height:1.6;
+
+    transition:
+    opacity .20s ease;
+
+}
+
+#arabot-details{
+
+    margin-top:20px;
+
+    font-size:14px;
+
+    opacity:.72;
+
+}
+
+#arabot-progress{
+
+    margin-top:22px;
+
+}
+
+#arabot-buttons{
+
+    margin-top:28px;
+
+    transition:
+    opacity .20s ease;
+
+}
+
+.arabot-visible #arabot-dialog{
+
+    transform:translateY(0) scale(1);
+
+    opacity:1;
+
+}
+
+.arabot-visible #arabot-icon{
+
+    opacity:1;
+
+    transform:scale(1);
+
+}
+
+.arabot-hidden #arabot-dialog{
+
+   transform:translateY(12px) scale(.94);
+
+    opacity:0;
+
+}
+
+/* ====================================================== */
+/* THEME */
+/* ====================================================== */
+
+:root{
+
+    --arabot-primary:#1E90FF;
+    --arabot-success:#22C55E;
+    --arabot-warning:#F59E0B;
+    --arabot-danger:#EF4444;
+
+   --arabot-bg:rgba(7,18,34,.64);
+   --arabot-card:rgba(16,34,61,.84);
+    --arabot-border:rgba(255,255,255,.12);
+
+    --arabot-radius:18px;
+
+    --arabot-blur:22px;
+
+    --arabot-shadow:
+        0 24px 80px rgba(0,0,0,.35);
+
+}
+
+/* ====================================================== */
+/* PROGRESS */
+/* ====================================================== */
+
+.arabot-progress{
+
+    width:100%;
+
+    height:8px;
+
+    margin-top:28px;
+
+    border-radius:999px;
+
+    overflow:hidden;
+
+    background:rgba(255,255,255,.08);
+
+}
+
+.arabot-progress-bar{
+
+    width:28%;
+
+    height:100%;
+
+    border-radius:999px;
+
+    background:linear-gradient(
+        90deg,
+        #1E90FF,
+        #75D0FA
+    );
+
+    animation: arabotProgress 1.8s ease-in-out infinite;
+
+}
+
+@keyframes arabotProgress{
+
+    0%{
+    transform:translateX(-140%);
+}
+
+100%{
+    transform:translateX(420%);
+}
+
+}
+
+/* ====================================================== */
+/* BUTTONS */
+/* ====================================================== */
+
+#arabot-buttons{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:14px;
+
+    margin-top:28px;
+
+}
+
+.arabot-btn{
+
+    min-width:132px;
+
+    padding:12px 22px;
+
+    border:none;
+
+    border-radius:14px;
+
+    cursor:pointer;
+
+    font: size 14px;px;
+
+    font-weight:600;
+
+    transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    background .18s ease,
+    opacity .18s ease;
+}
+
+.arabot-btn-primary{
+
+    background:#1E90FF;
+
+    color:#fff;
+
+    box-shadow:
+    0 8px 20px rgba(30,144,255,.28);
+
+}
+
+.arabot-btn-primary:hover{
+
+   transform:translateY(-1px) scale(1.02);
+
+   box-shadow:
+    0 12px 28px rgba(30,144,255,.35);
+
+}
+
+.arabot-btn-secondary{
+
+    background:rgba(255,255,255,.08);
+
+    color:#fff;
+
+}
+
+.arabot-btn-secondary:hover{
+
+    background:rgba(255,255,255,.14);
+
+    transform:translateY(-1px);
+
+}
+
+.arabot-btn:active{
+
+    transform:scale(.97);
+
+}
+
+.arabot-btn:focus-visible{
+
+    outline:none;
+
+    box-shadow:
+
+        0 0 0 3px rgba(30,144,255,.22);
+
+}
+
+/* ==========================================================
+   MINI TOAST
+========================================================== */
+
+.ara-mini-toast{
+
+  position:fixed;
+
+  bottom:18px;
+
+  right:18px;
+
+  display:flex;
+
+  align-items:center;
+
+  gap:8px;
+
+  padding:10px 14px;
+
+  background:rgba(15,27,47,.96);
+
+  color:#fff;
+
+  border:1px solid rgba(255,255,255,.08);
+
+  border-left:3px solid #33d17a;
+
+  border-radius:10px;
+
+  font-size:13px;
+
+  font-weight:500;
+
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+
+  backdrop-filter:blur(12px);
+
+  z-index:99999;
+
+  opacity:0;
+
+  transform:translateY(10px);
+
+  transition:.25s;
+
+  pointer-events:none;
+
+}
+
+.ara-mini-toast.show{
+
+  opacity:1;
+
+  transform:translateY(0);
+
+}
+
+/* ==========================================================
+   LOADING
+========================================================== */
+
+#arabot-dialog[data-mode="loading"]{
+
+    max-width:500px;
+
+}
+
+#arabot-dialog[data-mode="loading"] #arabot-title{
+
+    margin-top:14px;
+
+}
+
+#arabot-dialog[data-mode="loading"] #arabot-message{
+
+    margin-top:14px;
+
+}
+
+#arabot-dialog[data-mode="loading"] #arabot-buttons{
+
+    display:none;
+
+}
+
+#arabot-dialog[data-mode="loading"] #arabot-progress{
+
+    margin-top:28px;
+
+    margin-bottom:6px;
+
+}
+
+#arabot-dialog[data-mode="loading"] #arabot-details{
+
+    opacity:.62;
+
+}
+
+#arabot-dialog[data-mode="loading"] #arabot-icon{
+
+    animation: arabotBreath 2.2s ease-in-out infinite;
+
+}
+
+
+
+/* ==========================================================
+   SUCCESS
+========================================================== */
+
+#arabot-dialog[data-mode="success"]{
+
+    max-width:520px;
+
+}
+
+#arabot-dialog[data-mode="success"] #arabot-icon{
+
+    margin-bottom:10px;
+
+}
+
+#arabot-dialog[data-mode="success"] #arabot-title{
+
+    margin-top:8px;
+
+}
+
+#arabot-dialog[data-mode="success"] #arabot-details{
+
+    opacity:.65;
+
+}
+
+#arabot-dialog[data-mode="success"] #arabot-buttons{
+
+    margin-top:34px;
+
+}
+
+#arabot-dialog[data-mode="success"]{
+
+    border-color:rgba(34,197,94,.20);
+
+}
+
+#arabot-dialog[data-mode="success"] #arabot-icon{
+
+    filter:
+
+        drop-shadow(0 0 18px rgba(34,197,94,.20));
+
+}
+
+/* ==========================================================
+   CONFIRM
+========================================================== */
+
+#arabot-dialog[data-mode="confirm"]{
+
+    max-width:560px;
+
+}
+
+#arabot-dialog[data-mode="confirm"] #arabot-icon{
+
+    margin-bottom:12px;
+
+}
+
+#arabot-dialog[data-mode="confirm"] #arabot-title{
+
+    margin-top:6px;
+
+    margin-bottom:8px;
+
+}
+
+#arabot-dialog[data-mode="confirm"] #arabot-message{
+
+    margin-top:18px;
+
+    margin-bottom:12px;
+
+    line-height:1.7;
+
+}
+
+#arabot-dialog[data-mode="confirm"] #arabot-buttons{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:16px;
+
+    margin-top:36px;
+
+}
+
+#arabot-dialog[data-mode="confirm"] .arabot-btn{
+
+    flex:1;
+
+    max-width:180px;
+
+}
+
+#arabot-dialog[data-mode="confirm"] .arabot-btn-secondary{
+
+    opacity:.82;
+
+}
+
+#arabot-dialog[data-mode="confirm"] .arabot-btn-secondary:hover{
+
+    opacity:1;
+
+}
+
+#arabot-dialog[data-mode="confirm"] .arabot-btn-primary{
+
+    font-weight:700;
+
+}
+
+#arabot-dialog[data-mode="confirm"]{
+
+    border-color:rgba(30,144,255,.18);
+
+}
+
+/* ==========================================================
+   TOP ACCENT
+========================================================== */
+
+#arabot-dialog::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+
+    left:0;
+
+    right:0;
+
+    height:3px;
+
+    border-radius:999px;
+
+    background:rgba(255,255,255,.08);
+
+    transform-origin:left center;
+
+    animation:
+
+        arabotAccentIn
+
+        .22s
+
+        ease-out;
+
+}
+
+#arabot-dialog[data-mode="success"]::before{
+
+    background:linear-gradient(
+
+        90deg,
+
+        rgba(34,197,94,.90),
+
+        rgba(34,197,94,.25)
+
+    );
+
+}
+
+#arabot-dialog[data-mode="confirm"]::before{
+
+    background:linear-gradient(
+
+        90deg,
+
+        rgba(30,144,255,.90),
+
+        rgba(30,144,255,.25)
+
+    );
+
+}
+
+#arabot-dialog[data-mode="warning"]::before{
+
+    background:linear-gradient(
+
+        90deg,
+
+        rgba(245,158,11,.90),
+
+        rgba(245,158,11,.25)
+
+    );
+
+}
+
+#arabot-dialog[data-mode="error"]::before{
+
+    background:linear-gradient(
+
+        90deg,
+
+        rgba(239,68,68,.90),
+
+        rgba(239,68,68,.25)
+
+    );
+
+}
+
+#arabot-dialog[data-mode="alert"]::before{
+
+    background:linear-gradient(
+
+        90deg,
+
+        rgba(30,144,255,.75),
+
+        rgba(117,208,250,.20)
+
+    );
+
+}
+
+#arabot-dialog[data-mode="loading"]::before{
+
+    background:linear-gradient(
+
+        90deg,
+
+        rgba(30,144,255,.85),
+
+        rgba(117,208,250,.25)
+
+    );
+
+}
+
+/* ==========================================================
+   SIGNATURE ANIMATION
+========================================================== */
+
+@keyframes arabotAccentIn{
+
+    0%{
+
+        transform:scaleX(0);
+
+        opacity:.25;
+
+    }
+
+    60%{
+
+        opacity:1;
+
+    }
+
+    100%{
+
+        transform:scaleX(1);
+
+        opacity:1;
+
+    }
+
+}
+
+@keyframes arabotBreath{
+
+    0%{
+
+        transform:scale(1);
+
+        filter:drop-shadow(0 0 12px rgba(30,144,255,.15));
+
+    }
+
+    50%{
+
+        transform:scale(1.03);
+
+        filter:drop-shadow(0 0 24px rgba(30,144,255,.35));
+
+    }
+
+    100%{
+
+        transform:scale(1);
+
+        filter:drop-shadow(0 0 12px rgba(30,144,255,.15));
+
+    }
+
+}
+
+/* ==========================================================
+   ARABOT REASON
+========================================================== */
+
+.arabot-reason{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:10px;
+
+    margin-top:12px;
+
+}
+
+.arabot-reason-item{
+
+    display:grid;
+
+    grid-template-columns:22px 1fr;
+
+    align-items:center;
+
+    column-gap:12px;
+
+    width:100%;
+
+    padding:14px 16px;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    border-radius:12px;
+
+    background:rgba(255,255,255,.02);
+
+    cursor:pointer;
+
+    transition:.18s;
+
+    box-sizing:border-box;
+
+}
+
+.arabot-reason-item:hover{
+
+    background:rgba(30,144,255,.08);
+
+    border-color:rgba(30,144,255,.35);
+
+}
+
+.arabot-reason-item input{
+
+    margin:0;
+
+}
+
+.arabot-reason-label{
+
+    font-size:14px;
+
+    font-weight:500;
+
+    color:var(--text);
+
+    line-height:1.4;
+
+    text-align:left;
+
+}
+
+#arabot-reason-detail{
+
+    width:100%;
+
+    margin-top:6px;
+
+    min-height:90px;
+
+    resize:vertical;
+
+    border-radius:12px;
+
+    box-sizing:border-box;
+
+}

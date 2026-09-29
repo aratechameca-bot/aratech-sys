@@ -1,0 +1,247 @@
+/*==================================================
+GESTIÓN FINANCIERA
+==================================================*/
+
+.gestion-wrap{
+
+    display:grid;
+
+    grid-template-columns:1.2fr .9fr;
+
+    gap:18px;
+
+    padding:var(--space-20);
+
+    align-items:start;
+
+}
+
+.gestion-card{
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    border-radius:var(--radius-lg);
+
+    padding:18px;
+
+    transition:var(--transition-fast);
+
+}
+
+.gestion-card:hover{
+
+    border-color:rgba(30,144,255,.35);
+
+    transform:translateY(calc(var(--space-2) * -1));
+
+    box-shadow:var(--shadow-md);
+
+}
+.gestion-card h3{
+
+    color:var(--pri);
+
+    letter-spacing:.3px;
+
+}
+.gestion-item{
+
+    margin-bottom:10px;
+
+    line-height:1.45;
+
+}
+
+.gestion-card strong{
+    display:block;
+    color:var(--text);
+    font-size:13px;
+    margin-bottom:2px;
+}
+
+.gestion-card button{
+    width:100%;
+    margin-bottom:10px;
+}
+
+.gestion-card button:last-child{
+    margin-bottom:0;
+}
+
+.gestion-full{
+    grid-column:1/-1;
+}
+
+.gestion-grid{
+
+    display:grid;
+
+    grid-template-columns:150px 1fr;
+
+    gap:12px 18px;
+
+    align-items:center;
+
+}
+
+.gestion-grid .valor{
+
+    color:#fff;
+
+    font-weight:600;
+
+}
+
+.gestion-grid strong{
+    margin:0;
+}
+
+.gestion-actions{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.gestion-actions button{
+    width:100%;
+}
+
+.gestion-card button{
+
+    min-height:44px;
+
+    border-radius:var(--radius-sm);
+
+    font-weight:600;
+
+}
+
+@media(max-width:900px){
+
+    .gestion-wrap{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+
+
+/*==============================
+HEADER MODAL GESTIÓN
+==============================*/
+
+#modalGestion .modal-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:22px;
+
+    padding-bottom:14px;
+
+    border-bottom:1px solid rgba(255,255,255,.06);
+
+}
+
+#modalGestion .icon-btn{
+
+    width:38px;
+
+    height:38px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:var(--radius-sm);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    background:rgba(255,255,255,.04);
+
+    color:#fff;
+
+    transition:var(--transition-fast);
+
+}
+
+#modalGestion .icon-btn:hover{
+
+    background:var(--accent);
+
+    border-color:var(--accent);
+
+}
+
+
+/*=========================================
+GESTIÓN FINANCIERA
+AJUSTE DE TARJETAS
+=========================================*/
+
+.gestion-card{
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:flex-start;
+
+}
+
+/* Título de cada tarjeta */
+
+.gestion-card h3{
+
+    display:flex;
+
+    align-items:center;
+
+    min-height:32px;
+
+    margin:0 0 20px;
+
+    padding-bottom:10px;
+
+    border-bottom:1px solid rgba(255,255,255,.06);
+
+}
+
+/* Contenido de Información Financiera */
+
+.gestion-grid{
+
+    margin-top:6px;
+
+}
+
+/* Panel de acciones */
+
+.gestion-actions{
+
+    margin-top:6px;
+
+}
+
+/* Botones ligeramente más separados */
+
+.gestion-actions button{
+
+    margin-bottom:var(--space-12);
+
+}
+
+.gestion-actions button:last-child{
+
+    margin-bottom:0;
+
+}

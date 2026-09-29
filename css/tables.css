@@ -1,5 +1,7 @@
-    .tbl-wrap {
-      overflow-x: auto
+    .tbl-wrap{
+
+        overflow-x:auto;
+
     }
 
     table {
@@ -10,40 +12,64 @@
       table-layout: auto;
     }
 
-    th {
-      background: var(--bg3);
-      color: var(--accent2);
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      padding: 9px 10px;
-      text-align: left;
-      font-family: 'League Spartan', sans-serif;
-      font-weight: 700;
-      border-bottom: 1px solid var(--border)
+    th{
+
+        background:var(--bg3);
+
+        color:var(--accent2);
+
+        font-size:9px;
+
+        text-transform:uppercase;
+
+        letter-spacing:1.5px;
+
+        padding:var(--space-10);
+
+        text-align:left;
+
+        font-family:'League Spartan',sans-serif;
+
+        font-weight:700;
+
+        border-bottom:1px solid var(--border);
+
     }
 
-    td {
-      padding: 9px 10px;
-      border-bottom: 1px solid rgba(42, 52, 68, .4);
-      vertical-align: top;
+    td{
+
+        padding:var(--space-10);
+
+        border-bottom:1px solid rgba(42,52,68,.4);
+
+        vertical-align:top;
+
     }
 
     tr:hover td {
       background: var(--surface2)
     }
 
-    .tag {
-      display: inline-block;
-      border-radius: 20px;
-      padding: 2px 8px;
-      font-size: 10px;
-      font-weight: 500
+    .tag{
+
+        display:inline-block;
+
+        border-radius:var(--radius-pill);
+
+        padding:var(--space-2) var(--space-8);
+
+        font-size:10px;
+
+        font-weight:500;
+
     }
 
-    .tg {
-      background: rgba(0, 230, 118, .12);
-      color: var(--green)
+    .tg{
+
+        background:rgba(0,230,118,.12);
+
+        color:var(--success);
+
     }
 
     .to {
@@ -76,23 +102,36 @@
       color: var(--yellow)
     }
 
-    .tgg {
-      background: rgba(0, 230, 118, .2);
-      color: var(--green);
-      font-weight: 700
+    .tgg{
+
+        background:rgba(0,230,118,.2);
+
+        color:var(--success);
+
+        font-weight:700;
+
     }
 
-    .tgb {
-      background: rgba(0, 212, 255, .2);
-      color: var(--accent)
+    .tgb{
+
+        background:rgba(0,212,255,.2);
+
+        color:var(--info);
+
     }
 
-    .tgy {
-      background: rgba(255, 214, 0, .2);
-      color: var(--yellow)
+    .tgy{
+
+        background:rgba(255,214,0,.2);
+
+        color:var(--warning);
+
     }
 
-    .trd {
-      background: rgba(255, 23, 68, .2);
-      color: var(--red)
+    .trd{
+
+        background:rgba(255,23,68,.2);
+
+        color:var(--danger);
+
     }

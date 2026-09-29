@@ -2,7 +2,7 @@
 // BITÁCORA
 // ============================================================
 
-function bitacora(ordenId, accion, detalle) {
+async function bitacora(ordenId, accion, detalle) {
   if (!currentUser) return;
 
   const ords = DB.get("ordenes");
@@ -30,7 +30,7 @@ function bitacora(ordenId, accion, detalle) {
 
   DB.set("ordenes", ords);
 
-  API.update("ordenes", ordenId, {
+  await DATA.update("ordenes", ordenId, {
     bitacora: ords[i].bitacora,
   });
 }
@@ -39,18 +39,14 @@ function bitacora(ordenId, accion, detalle) {
 // CIERRE DE SESIÓN AUTOMÁTICO
 // ============================================================
 
-const SESSION_TIMEOUT = 60 * 60 * 1000;
-
-let _inactivityTimer = null;
-
 function resetInactivityTimer() {
-  clearTimeout(_inactivityTimer);
+  clearTimeout(window._inactivityTimer);
 
-  _inactivityTimer = setTimeout(() => {
-    if (currentUser) {
+  window._inactivityTimer = setTimeout(() => {
+    if (window.currentUser) {
       localStorage.removeItem("ara_session");
 
-      currentUser = null;
+      window.currentUser = null;
 
       document.body.classList.remove("autenticado");
 
@@ -60,7 +56,7 @@ function resetInactivityTimer() {
 
       location.reload();
     }
-  }, SESSION_TIMEOUT);
+  }, ARATECH.SESSION_TIMEOUT);
 }
 
 ["click", "keypress", "mousemove", "touchstart", "scroll"].forEach((evt) => {
@@ -73,7 +69,7 @@ function resetInactivityTimer() {
 // PERMISOS POR ROL
 // ============================================================
 
-const PERMISOS = {
+window.PERMISOS = Object.freeze({
   admin: {
     verVentas: true,
     verReporte: true,
@@ -115,7 +111,7 @@ const PERMISOS = {
     verInventarioEditar: false,
     gestionUsuarios: false,
   },
-};
+});
 
 function puedo(permiso) {
   if (!currentUser) return false;
@@ -195,5 +191,3 @@ window.resetInactivityTimer = resetInactivityTimer;
 
 window.puedo = puedo;
 window.aplicarPermisos = aplicarPermisos;
-
-window.PERMISOS = PERMISOS;

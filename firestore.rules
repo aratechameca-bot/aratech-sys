@@ -1,0 +1,377 @@
+rules_version = '2';
+
+service cloud.firestore {
+
+  match /databases/{database}/documents {
+
+   // ============================================================
+// HELPERS
+// ============================================================
+
+function signedIn() {
+  return request.auth != null;
+}
+
+function currentUser() {
+  return get(
+    /databases/$(database)/documents/usuarios/$(request.auth.token.email)
+  ).data;
+}
+
+function isActive() {
+  return signedIn() &&
+         currentUser().activo == true;
+}
+
+function isAdmin() {
+  return signedIn() &&
+         isActive() &&
+         currentUser().rol == "admin";
+}
+
+function isRecepcion() {
+  return signedIn() &&
+         isActive() &&
+         currentUser().rol == "recepcionista";
+}
+
+function isTecnico() {
+  return signedIn() &&
+         isActive() &&
+         currentUser().rol == "tecnico";
+}
+
+   // ============================================================
+    // USUARIOS
+    // ============================================================
+
+    match /usuarios/{userId} {
+
+      allow get, list, create, update, delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // CONFIGURACIÓN
+    // ============================================================
+
+    match /config/{docId} {
+
+      allow get, list, create, update, delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // CATÁLOGO DE SERVICIOS
+    // ============================================================
+
+    match /cat/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion() || isTecnico();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // CLIENTES
+    // ============================================================
+
+    match /clientes/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion() || isTecnico();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // ÓRDENES DE SERVICIO
+    // ============================================================
+
+    match /ordenes/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion() || isTecnico();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // INVENTARIO
+    // ============================================================
+
+    match /inventario/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // MOVIMIENTOS DE INVENTARIO
+    // ============================================================
+
+    match /inventario_movimientos/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // VENTAS
+    // ============================================================
+
+    match /ventas/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // GARANTÍAS
+    // ============================================================
+
+    match /garantias/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion() || isTecnico();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // COMPRAS
+    // ============================================================
+
+    match /ordenes_compra/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // PROVEEDORES
+    // ============================================================
+
+    match /proveedores/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+   // ============================================================
+    // GASTOS
+    // ============================================================
+
+    match /gastos/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // TICKETS
+    // ============================================================
+
+    match /tickets/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion() || isTecnico();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // COMENTARIOS DE TICKETS
+    // ============================================================
+
+    match /ticketcomentarios/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion() || isTecnico();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // ARCHIVOS DE TICKETS
+    // ============================================================
+
+    match /ticketarchivos/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion() || isTecnico();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // CONCEPTOS DE TICKETS
+    // ============================================================
+
+    match /ticketconceptos/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion() || isTecnico();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // ACCESOS
+    // ============================================================
+
+    match /accesos/{docId} {
+
+      allow get, list: if isAdmin();
+
+      allow create: if signedIn();
+
+      allow update, delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // AVISOS DE CLIENTES
+    // ============================================================
+
+    match /cliente_avisos/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // PORTAL DE CLIENTES
+    // ============================================================
+
+    match /clientes_portal/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // COTIZACIONES
+    // ============================================================
+
+    match /cotizaciones/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // FINANZAS
+    // ============================================================
+
+    match /finanzas_movimientos/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // FOLIOS
+    // ============================================================
+
+    match /folios/{docId} {
+
+      allow get, list: if signedIn();
+
+      allow create, update, delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // EVIDENCIAS DE GASTOS
+    // ============================================================
+
+    match /gastoevidencias/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // EVIDENCIAS DE ÓRDENES
+    // ============================================================
+
+    match /ordenevidencias/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion() || isTecnico();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // PAGOS
+    // ============================================================
+
+    match /pagos/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion();
+
+      allow delete: if isAdmin();
+
+    }
+
+    // ============================================================
+    // SEGUIMIENTOS
+    // ============================================================
+
+    match /segs/{docId} {
+
+      allow get, list, create, update:
+        if isAdmin() || isRecepcion() || isTecnico();
+
+      allow delete: if isAdmin();
+
+    }
+
+  }
+
+}

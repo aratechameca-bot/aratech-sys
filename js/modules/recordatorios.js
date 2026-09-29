@@ -25,7 +25,7 @@ function toggleRecordatorio() {
   guardarRecordatorio();
 }
 
-function guardarRecordatorio() {
+async function guardarRecordatorio() {
   const id = document.getElementById("exp-id")?.value;
   if (!id) return;
   const check = document.getElementById("exp-rec-check");
@@ -49,7 +49,9 @@ function guardarRecordatorio() {
   if (i < 0) return;
   ords[i].recordatorio = rec;
   DB.set("ordenes", ords);
-  API.update("ordenes", id, { recordatorio: rec });
+  await DATA.update("ordenes", id, {
+    recordatorio: rec,
+  });
   fecha.textContent = rec.pendiente && rec.fecha ? "Marcado: " + rec.fecha : "";
 }
 

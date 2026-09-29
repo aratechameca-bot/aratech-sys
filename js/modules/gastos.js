@@ -100,6 +100,7 @@ function rndGastosTabla(lista) {
   const tb = document.getElementById("tb-gastos");
   if (!tb) return;
   const data = lista || DB.get("gastos");
+  const esAdmin = window.currentUser?.rol === "admin";
   if (!data.length) {
     tb.innerHTML =
       '<tr><td colspan="8" class="nd">Sin gastos registrados</td></tr>';
@@ -125,19 +126,42 @@ function rndGastosTabla(lista) {
       <td style="font-size:11px">
         ${
           g.comprobante_url
-            ? `<a href="${g.comprobante_url}" target="_blank" style="color:var(--accent);text-decoration:none">📎 Ver</a>`
+            ? `<a href="${g.comprobante_url}" target="_blank" style="color:var(--accent);text-decoration:none"><i class="ar-icon clip"></i> Ver</a>`
             : g.referencia
               ? `<span style="color:var(--text3)">${g.referencia}</span>`
               : "—"
         }
       </td>
-      <td>
-        <button onclick="editGasto('${g.id}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px" title="Editar">✏️</button>
-        <button onclick="delGasto('${g.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px" title="Eliminar">🗑️</button>
-      </td>
+      <td class="bg-btn">
+
+    <div class="bg-btn-wrap">
+
+        <button
+            class="btn bg bsm btn-acciones"
+            data-id="${g.id}"
+            onclick="toggleAcciones(this)"
+            title="Acciones">
+            <i class="ar-icon menu"></i>
+        </button>
+
+    </div>
+
+    <div class="acciones-card">
+
+        <button
+            class="btn bg bsm"
+            onclick="editGasto('${g.id}')"
+            title="Editar gasto">
+            <i class="ar-icon edit"></i> Editar gasto
+        </button>
+
+    </div>
+
+</td>
     </tr>`,
     )
     .join("");
+  window.refreshIcons(tb);
 }
 
 function gasCatChange() {
@@ -168,64 +192,157 @@ function gasSubcatChange() {
 }
 
 function gasPreviewFoto(input) {
-  const file = input.files[0];
-  if (!file) return;
-  document.getElementById("gasto-foto-nombre").textContent = file.name;
-  if (file.type.startsWith("image/")) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      document.getElementById("gasto-foto-img").src = e.target.result;
-      document.getElementById("gasto-foto-preview").style.display = "";
-    };
-    reader.readAsDataURL(file);
-  } else {
-    document.getElementById("gasto-foto-preview").style.display = "none";
-    document.getElementById("gasto-foto-nombre").textContent =
-      "📄 " + file.name;
+  const files = Array.from(input.files);
+
+  const nombre = document.getElementById("gasto-foto-nombre");
+
+  const preview = document.getElementById("gasto-foto-preview");
+
+  const lista = document.getElementById("gasto-foto-lista");
+
+  if (!files.length) {
+    nombre.textContent = "Sin archivos";
+
+    preview.style.display = "none";
+
+    lista.innerHTML = "";
+
+    return;
   }
+
+  if (files.length > 5) {
+    notify("❌ Máximo 5 archivos por gasto");
+
+    input.value = "";
+
+    return;
+  }
+
+  nombre.textContent = files.length + " archivo(s) seleccionado(s)";
+
+  lista.innerHTML = "";
+
+  preview.style.display = "";
+
+  files.forEach((file) => {
+    const item = document.createElement("div");
+
+    item.style.cssText = `
+      width:100px;
+      font-size:10px;
+      color:var(--text3);
+      text-align:center;
+    `;
+
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        item.innerHTML = `
+
+          <img
+            src="${e.target.result}"
+            style="
+              width:80px;
+              height:80px;
+              object-fit:cover;
+              border-radius:6px;
+              border:1px solid var(--border);
+            "
+          >
+
+          <div>
+            ${file.name.substring(0, 15)}
+          </div>
+
+        `;
+      };
+
+      reader.readAsDataURL(file);
+    } else {
+      item.innerHTML = `
+
+        <div style="
+          font-size:30px;
+        ">
+          <i class="ar-icon archivo"></i>
+        </div>
+
+        <div>
+          ${file.name.substring(0, 15)}
+        </div>
+
+      `;
+
+      window.refreshIcons(item);
+    }
+
+    lista.appendChild(item);
+  });
 }
 
-async function subirComprobanteGasto(gastoId) {
+async function subirComprobantesGasto(gastoId) {
   const input = document.getElementById("gasto-foto-input");
-  if (!input.files.length) return null;
-  const file = input.files[0];
-  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === "TU_URL_AQUI") return null;
-  try {
-    let base64;
-    if (file.type.startsWith("image/")) {
-      const dataUrl = await new Promise((res) => {
-        const r = new FileReader();
-        r.onload = (e) => res(e.target.result);
-        r.readAsDataURL(file);
-      });
-      const compressed = await comprimirImagen(dataUrl, 0.75);
-      base64 = compressed.split(",")[1];
-    } else {
-      base64 = await new Promise((res) => {
-        const r = new FileReader();
-        r.onload = (e) => res(e.target.result.split(",")[1]);
-        r.readAsDataURL(file);
-      });
-    }
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "subirFoto",
-        collection: "GASTO_" + gastoId,
-        payload: {
-          nombre: file.name,
-          base64,
-          mimeType: file.type || "image/jpeg",
-        },
-      }),
-      redirect: "follow",
-    });
-    const data = await res.json();
-    return data.url || null;
-  } catch (e) {
-    return null;
+
+  if (!input.files.length) return [];
+
+  const files = Array.from(input.files);
+
+  if (files.length > 5) {
+    notify("❌ Máximo 5 archivos por gasto");
+
+    return [];
   }
+
+  const archivos = [];
+
+  for (const file of files) {
+    try {
+      let base64;
+
+      if (file.type.startsWith("image/")) {
+        const dataUrl = await new Promise((res) => {
+          const r = new FileReader();
+
+          r.onload = (e) => res(e.target.result);
+
+          r.readAsDataURL(file);
+        });
+
+        const compressed = await comprimirImagen(dataUrl, 0.75);
+
+        base64 = compressed.split(",")[1];
+      } else {
+        base64 = await new Promise((res) => {
+          const r = new FileReader();
+
+          r.onload = (e) => res(e.target.result.split(",")[1]);
+
+          r.readAsDataURL(file);
+        });
+      }
+
+      const data = await FB.callFunction("subirGastoFile", {
+        gasto_id: gastoId,
+
+        nombre: file.name,
+
+        base64,
+
+        mimeType: file.type || "application/octet-stream",
+
+        usuario: currentUser?.nombre || "",
+      });
+
+      if (data?.ok) {
+        archivos.push(data.url);
+      }
+    } catch (e) {
+      console.error("Error subiendo comprobante:", e);
+    }
+  }
+
+  return archivos;
 }
 
 async function saveGasto() {
@@ -250,11 +367,17 @@ async function saveGasto() {
 
   notify("💾 Guardando gasto…");
 
-  // Subir comprobante si hay archivo
-  let comprobante_url = null;
+  // Subir evidencias si hay archivos
+  let comprobante_url = "";
+
   const fotoInput = document.getElementById("gasto-foto-input");
+
   if (fotoInput.files.length) {
-    comprobante_url = await subirComprobanteGasto(id);
+    const evidencias = await subirComprobantesGasto(id);
+
+    if (evidencias.length) {
+      comprobante_url = evidencias[0];
+    }
   }
 
   const gasto = {
@@ -276,12 +399,44 @@ async function saveGasto() {
     if (idx >= 0) {
       gastos[idx] = { ...gastos[idx], ...gasto };
       DB.set("gastos", gastos);
-      API.update("gastos", eid, gasto).catch(() => {});
+      await DATA.update("gastos", eid, gasto);
     }
   } else {
     gastos.push(gasto);
+
     DB.set("gastos", gastos);
-    API.call("insert", "gastos", gasto).catch(() => {});
+
+    await DATA.save("gastos", gasto.id, gasto);
+
+    try {
+      await FINANZAS.registrarMovimiento({
+        tipo: "EGRESO",
+
+        modulo: "GASTOS",
+
+        origen: gasto.id,
+
+        monto: -Math.abs(gasto.monto),
+
+        metodo: gasto.metodo,
+
+        categoria: gasto.categoria,
+
+        descripcion: gasto.descripcion,
+
+        referencia: gasto.referencia,
+
+        usuario: gasto.registrado_por,
+
+        fecha: gasto.fecha,
+      });
+    } catch (error) {
+      console.error("Error al registrar movimiento financiero:", error);
+
+      notify(
+        "⚠️ El gasto fue guardado correctamente, pero no pudo registrarse el movimiento financiero.",
+      );
+    }
   }
 
   notify("✅ Gasto guardado");
@@ -324,17 +479,40 @@ function editGasto(id) {
   openM("m-gasto");
 }
 
-function delGasto(id) {
-  if (!confirm("¿Eliminar este gasto?")) return;
+async function delGasto(id) {
+  if (window.currentUser?.rol !== "admin") {
+    notify("Permisos insuficientes");
+
+    return;
+  }
+
+  const ok = await ARABOT.confirm({
+    title: "Eliminar gasto",
+
+    message: "¿Deseas eliminar este gasto?",
+
+    details:
+      "El gasto será eliminado permanentemente y esta acción no podrá deshacerse.",
+  });
+
+  if (!ok) return;
+
+  await DATA.delete("gastos", id);
+
   const gastos = DB.get("gastos").filter((g) => g.id !== id);
+
   DB.set("gastos", gastos);
-  API.call("delete", "gastos", null, id).catch(() => {});
+
   notify("✅ Gasto eliminado");
+
   rndGastos();
 }
 
 function abrirNuevoGasto() {
-  document.getElementById("gasto-tit").textContent = "💸 Nuevo gasto";
+  document.getElementById("gasto-tit").innerHTML =
+    '<i class="ar-icon dinero"></i> Nuevo gasto';
+
+  window.refreshIcons(document.getElementById("gasto-tit"));
   document.getElementById("gasto-eid").value = "";
   document.getElementById("gasto-fecha").value = hoy();
   document.getElementById("gasto-cat").value = "";
@@ -359,7 +537,7 @@ window.gasCatChange = gasCatChange;
 window.gasSubcatChange = gasSubcatChange;
 
 window.gasPreviewFoto = gasPreviewFoto;
-window.subirComprobanteGasto = subirComprobanteGasto;
+window.subirComprobantesGasto = subirComprobantesGasto;
 
 window.saveGasto = saveGasto;
 window.editGasto = editGasto;

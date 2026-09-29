@@ -1,56 +1,103 @@
 // ============================================================
-// FOTOS DE EVIDENCIA — Google Drive
+// FOTOS DE EVIDENCIA — Firebase Storage
 // ============================================================
 
 const MAX_FOTOS = 10;
 const MAX_SIZE_MB = 5;
-let _fotasPendientes = [];
+const MIME_PERMITIDOS = ["image/jpeg", "image/png", "image/webp"];
+
+let _fotosPendientes = [];
+
+// Evita múltiples aperturas de cámara/galería
+let _capturaAbierta = false;
 
 function actualizarContador() {
   const el = document.getElementById("fotos-contador");
   if (!el) return;
-  const n = _fotasPendientes.length;
+  const n = _fotosPendientes.length;
   el.textContent = n + " / 10 fotos";
   el.style.color = n >= 10 ? "#ff1744" : n >= 7 ? "#ffd600" : "var(--text3)";
 }
 
 function previewFotos(input) {
   const files = Array.from(input.files);
+  const fotosAgregadas = files.length;
   const container = document.getElementById("fotos-preview");
+
   for (const file of files) {
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
       notify("❌ " + file.name + " supera los " + MAX_SIZE_MB + "MB");
       continue;
     }
-    if (_fotasPendientes.length >= MAX_FOTOS) {
+
+    if (!MIME_PERMITIDOS.includes(file.type)) {
+      notify("❌ " + file.name + " no es un formato de imagen permitido");
+      continue;
+    }
+
+    if (_fotosPendientes.length >= MAX_FOTOS) {
       notify("❌ Máximo " + MAX_FOTOS + " fotos por orden");
       break;
     }
+
     const reader = new FileReader();
+
     reader.onload = (e) => {
       const id = "fp-" + Date.now() + Math.random().toString(36).slice(2);
-      _fotasPendientes.push({
+
+      _fotosPendientes.push({
         id,
         file,
         dataUrl: e.target.result,
         name: file.name,
       });
+
       const div = document.createElement("div");
+
       div.id = id;
+
       div.style.cssText = "position:relative;width:80px";
-      div.innerHTML = `<img src="${e.target.result}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
-        <button onclick="quitarFotaPendiente('${id}')" style="position:absolute;top:-6px;right:-6px;background:#ff1744;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;padding:0">✕</button>
-        <div style="font-size:8px;color:var(--text3);text-align:center;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">${file.name.slice(0, 12)}</div>`;
+
+      div.innerHTML = `
+        <img
+          src="${e.target.result}"
+          style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
+
+        <button
+          onclick="quitarFotoPendiente('${id}')"
+          style="position:absolute;top:-6px;right:-6px;background:#ff1744;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;padding:0">
+          ✕
+        </button>
+
+        <div
+          style="font-size:8px;color:var(--text3);text-align:center;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">
+          ${file.name.slice(0, 12)}
+        </div>
+      `;
+
       container.appendChild(div);
+
       actualizarContador();
+
+      mostrarFotoAgregada(
+        fotosAgregadas === 1
+          ? "📸 Se agregó 1 fotografía"
+          : `📸 Se agregaron ${fotosAgregadas} fotografías`,
+      );
     };
+
     reader.readAsDataURL(file);
   }
-  input.value = "";
+
+  // Permitir volver a seleccionar la misma foto
+  // o abrir nuevamente la cámara
+  setTimeout(() => {
+    input.value = "";
+  }, 100);
 }
 
-function quitarFotaPendiente(id) {
-  _fotasPendientes = _fotasPendientes.filter((f) => f.id !== id);
+function quitarFotoPendiente(id) {
+  _fotosPendientes = _fotosPendientes.filter((f) => f.id !== id);
   document.getElementById(id)?.remove();
   actualizarContador();
 }
@@ -72,71 +119,138 @@ function comprimirImagen(dataUrl, calidad) {
   });
 }
 
-async function subirFotasOrden(ordenId) {
-  if (!_fotasPendientes.length || !_syncEnabled) return;
-  notify("📷 Subiendo " + _fotasPendientes.length + " foto(s) a Drive...");
+function abrirCamaraOrden() {
+  if (_capturaAbierta) return;
+
+  if (_fotosPendientes.length >= MAX_FOTOS) {
+    notify("❌ Máximo " + MAX_FOTOS + " fotografías por orden.");
+
+    return;
+  }
+
+  const cam = document.getElementById("ord-camara");
+
+  if (!cam) return;
+
+  _capturaAbierta = true;
+
+  cam.value = "";
+
+  cam.click();
+
+  setTimeout(() => {
+    _capturaAbierta = false;
+  }, 800);
+}
+
+function abrirGaleriaOrden() {
+  if (_fotosPendientes.length >= MAX_FOTOS) {
+    notify("❌ Máximo " + MAX_FOTOS + " fotografías por orden.");
+
+    return;
+  }
+
+  const galeria = document.getElementById("ord-fotos");
+
+  if (!galeria) return;
+
+  galeria.value = "";
+
+  galeria.click();
+}
+
+function mostrarFotoAgregada(texto = "✅ Foto agregada") {
+  const msg = document.getElementById("foto-agregada-msg");
+
+  if (!msg) return;
+
+  clearTimeout(msg._timer);
+
+  msg.textContent = texto;
+
+  msg.style.display = "block";
+
+  requestAnimationFrame(() => {
+    msg.style.opacity = "1";
+  });
+
+  msg._timer = setTimeout(() => {
+    msg.style.opacity = "0";
+
+    setTimeout(() => {
+      msg.style.display = "none";
+    }, 250);
+  }, 1200);
+}
+
+async function subirFotosOrden(ordenId) {
+  if (!_fotosPendientes.length) return;
+  notify("📷 Subiendo " + _fotosPendientes.length + " foto(s)...");
   let subidas = 0;
-  for (const fota of _fotasPendientes) {
+  for (const foto of _fotosPendientes) {
     try {
-      const compressed = await comprimirImagen(fota.dataUrl, 0.75);
+      const compressed = await comprimirImagen(foto.dataUrl, 0.75);
       const base64 = compressed.split(",")[1];
-      // Usar POST para fotos (base64 es demasiado largo para URL)
-      const res = await fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "subirFoto",
-          collection: ordenId,
-          payload: {
-            nombre: fota.name,
-            base64,
-            mimeType: fota.file.type || "image/jpeg",
-          },
-        }),
-        redirect: "follow",
+      const result = await API.callFunction("subirFoto", {
+        collection: ordenId,
+        payload: {
+          nombre: foto.name,
+          base64,
+          mimeType: foto.file.type || "image/jpeg",
+          usuario: currentUser?.nombre || "",
+          visible_cliente: false,
+        },
       });
-      const text = await res.text();
-      const data = JSON.parse(text);
-      if (data.ok) subidas++;
+
+      if (result?.ok) subidas++;
     } catch (e) {
       console.warn("Error subiendo foto:", e);
     }
   }
-  _fotasPendientes = [];
+  _fotosPendientes = [];
   document.getElementById("fotos-preview").innerHTML = "";
   actualizarContador();
-  notify("✅ " + subidas + " foto(s) guardadas en Drive");
+  notify("✅ " + subidas + " foto(s) guardadas correctamente");
 }
 
-async function cargarFotasExpediente(ordenId) {
+async function cargarFotosExpediente(ordenId) {
   const container = document.getElementById("exp-fotos");
   if (!container) return;
-  if (!_syncEnabled) {
-    container.innerHTML =
-      '<div style="color:var(--text3);font-size:11px">Sin conexión a Drive</div>';
-    return;
-  }
   container.innerHTML =
     '<div style="color:var(--text3);font-size:11px">Cargando fotos...</div>';
   try {
-    const params = new URLSearchParams({
-      action: "obtenerFotos",
+    const data = await FB.callFunction("obtenerFotos", {
       collection: ordenId,
     });
-    const res = await fetch(APPS_SCRIPT_URL + "?" + params.toString(), {
-      method: "GET",
-      redirect: "follow",
-    });
-    const data = await res.json();
+
     if (data.fotos && data.fotos.length > 0) {
       container.innerHTML = data.fotos
         .map(
-          (f) =>
-            `<div style="position:relative;width:80px">
-          <a href="${f.url}" target="_blank"><img src="${f.thumbnail}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" title="${f.nombre}"></a>
-          <button onclick="eliminarFota('${ordenId}','${f.id}','${f.nombre}')" style="position:absolute;top:-6px;right:-6px;background:#ff1744;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;padding:0">✕</button>
-          <a href="${f.url}" target="_blank" style="display:block;text-align:center;font-size:8px;color:var(--accent2);margin-top:2px;text-decoration:none">⬇ Ver</a>
-        </div>`,
+          (f) => `
+            <div style="position:relative;width:80px">
+
+              <a href="${f.url}" target="_blank">
+                <img
+                src="${f.url}"
+                  style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer"
+                  title="${f.nombre}">
+              </a>
+
+              <button
+                onclick="eliminarFoto('${ordenId}','${f.id}','${f.nombre}')"
+                style="position:absolute;top:-6px;right:-6px;background:#ff1744;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;padding:0">
+                ✕
+              </button>
+
+              <a
+                href="${f.url}"
+                target="_blank"
+                style="display:block;text-align:center;font-size:8px;color:var(--accent2);margin-top:2px;text-decoration:none">
+                ⬇ Ver
+              </a>
+
+            </div>
+          `,
         )
         .join("");
     } else {
@@ -169,26 +283,22 @@ async function subirFotosExpediente(input) {
         "VISIBLE FOTO:",
         document.getElementById("exp-foto-visible")?.checked,
       );
-      await fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "subirFoto",
-          collection: ordenId,
-          payload: {
-            nombre: file.name,
-            base64,
-            mimeType: file.type || "image/jpeg",
-
-            usuario: currentUser?.nombre || "",
-
-            email: currentUser?.email || "",
-            visible_cliente:
-              document.getElementById("exp-foto-visible")?.checked || false,
-          },
-        }),
-        redirect: "follow",
+      const result = await FB.callFunction("subirFoto", {
+        collection: ordenId,
+        payload: {
+          nombre: file.name,
+          base64,
+          mimeType: file.type || "image/jpeg",
+          usuario: currentUser?.nombre || "",
+          email: currentUser?.email || "",
+          visible_cliente:
+            document.getElementById("exp-foto-visible")?.checked || false,
+        },
       });
+
+      if (!result?.ok) {
+        throw new Error(result?.error || "Error subiendo foto");
+      }
       notify("📷 Foto subida ✅");
 
       bitacora(ordenId, "Evidencia agregada", file.name);
@@ -203,23 +313,20 @@ async function subirFotosExpediente(input) {
       );
 
       if (notificarCliente && cliente?.email) {
-        console.log("TICKET:", ticket);
         console.log("CLIENTE:", cliente);
         console.log("EMAIL:", cliente?.email);
 
-        const envio = await API.call("notificarEvidencia", null, {
+        const envio = await FB.callFunction("notificarEvidencia", {
           correo: cliente.email,
           cliente: cliente.nombre,
           folio: orden.folio,
         });
 
-        console.log("ENVIO EVIDENCIA TICKET:", envio);
-
         console.log("ENVIO EVIDENCIA:", envio);
       }
 
       if (orden?.ticket_id) {
-        await API.save("ticketcomentarios", {
+        const comentarioArabot = {
           id: "TC-" + Date.now(),
 
           ticket_id: orden.ticket_id,
@@ -236,57 +343,57 @@ async function subirFotosExpediente(input) {
           visible_cliente: false,
 
           notificar_cliente: false,
-        });
+        };
+
+        await DATA.save(
+          "ticketcomentarios",
+          comentarioArabot.id,
+          comentarioArabot,
+        );
       }
 
-      cargarFotasExpediente(ordenId);
+      cargarFotosExpediente(ordenId);
     };
     reader.readAsDataURL(file);
   }
   input.value = "";
 }
 
-async function eliminarFota(ordenId, fotoId, fotoNombre) {
-  if (!confirm("¿Eliminar esta foto?")) return;
+async function eliminarFoto(ordenId, fotoId, fotoNombre) {
+  const ok = await ARABOT.confirm({
+    title: "Eliminar evidencia",
 
-  const resp = await fetch(APPS_SCRIPT_URL, {
-    method: "POST",
+    message: "¿Deseas eliminar esta fotografía?",
 
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8",
-    },
-
-    body: JSON.stringify({
-      action: "eliminarFotoLogica",
-
-      payload: {
-        fotoId: fotoId,
-
-        usuario: currentUser?.nombre || "",
-      },
-    }),
+    details:
+      "La evidencia dejará de estar disponible y esta acción no podrá deshacerse.",
   });
 
-  const data = await resp.json();
+  if (!ok) return;
+
+  const data = await FB.callFunction("eliminarFotoLogica", {
+    foto_id: fotoId,
+    usuario: currentUser?.nombre || "",
+  });
 
   console.log("ELIMINAR LOGICA:", data);
 
   notify("Foto eliminada ✅");
   bitacora(ordenId, "Evidencia eliminada", fotoNombre);
-  cargarFotasExpediente(ordenId);
+  cargarFotosExpediente(ordenId);
 }
 
 window.actualizarContador = actualizarContador;
 
 window.previewFotos = previewFotos;
-window.quitarFotaPendiente = quitarFotaPendiente;
+window.quitarFotoPendiente = quitarFotoPendiente;
 
 window.comprimirImagen = comprimirImagen;
 
-window.subirFotasOrden = subirFotasOrden;
+window.subirFotosOrden = subirFotosOrden;
 
-window.cargarFotasExpediente = cargarFotasExpediente;
+window.cargarFotosExpediente = cargarFotosExpediente;
 
 window.subirFotosExpediente = subirFotosExpediente;
 
-window.eliminarFota = eliminarFota;
+window.eliminarFoto = eliminarFoto;

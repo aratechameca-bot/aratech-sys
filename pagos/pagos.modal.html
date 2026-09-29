@@ -1,0 +1,140 @@
+<!-- ==========================================================
+ARATECH-SYS
+MODAL MOTOR DE COBROS
+========================================================== -->
+
+
+<div id="modalPago" class="modal">
+
+    <div class="modal-box pago-modal">
+
+        <div class="modal-header">
+
+            <h2>💳 Motor de Cobros</h2>
+
+            <button class="icon-btn" onclick="closeM('modalPago')">
+                ✕
+            </button>
+
+        </div>
+
+        <!-- ========================================= -->
+        <!-- RESUMEN -->
+        <!-- ========================================= -->
+
+        <div class="pag-grid">
+
+            <div class="pag-resumen">
+
+                <div class="pag-item">
+                    <span>Cliente</span>
+                    <strong id="pag-cliente"></strong>
+                </div>
+
+                <div class="pag-item">
+                    <span>Documento</span>
+                    <strong id="pag-documento"></strong>
+                </div>
+
+                <div class="pag-item">
+                    <span>Estado</span>
+                    <strong id="pag-estado"></strong>
+                </div>
+
+                <div class="pag-item">
+                    <span>Total</span>
+                    <strong id="pag-total"></strong>
+                </div>
+
+                <div class="pag-item">
+                    <span>Pagado</span>
+                    <strong id="pag-pagado"></strong>
+                </div>
+
+                <div class="pag-item saldo">
+                    <span>Saldo</span>
+                    <strong id="pag-saldo"></strong>
+                </div>
+
+            </div>
+
+            <!-- ========================================= -->
+            <!-- COBRO -->
+            <!-- ========================================= -->
+
+
+            <div class="pag-cobro">
+
+                <div class="pag-cobro-box">
+
+                    <label>Importe a cobrar</label>
+
+                    <input id="pagImporte" type="number" step="0.01" placeholder="0.00">
+
+                    <button id="btnSaldoCompleto" class="btn-primary">
+                        💵 Cobrar saldo completo
+                    </button>
+
+                </div>
+
+                <div class="pag-metodos">
+
+                    <button class="pag-btn active" data-metodo="EFECTIVO">
+                        💵 Efectivo
+                    </button>
+
+                    <button class="pag-btn" data-metodo="TARJETA">
+                        💳 Tarjeta
+                    </button>
+
+                    <button class="pag-btn" data-metodo="TRANSFERENCIA">
+                        🏦 Transferencia
+                    </button>
+
+                    <button class="pag-btn" data-metodo="MIXTO">
+                        🔄 Mixto
+                    </button>
+
+                </div>
+
+                <div id="pag-panel"></div>
+
+            </div>
+
+        </div>
+
+        <!-- ========================================= -->
+        <!-- HISTORIAL -->
+        <!-- ========================================= -->
+
+        <div class="pag-historial">
+
+            <h3>Historial de pagos</h3>
+
+            <div id="pagHistorial"></div>
+
+        </div>
+
+        <!-- ========================================= -->
+        <!-- BOTONES -->
+        <!-- ========================================= -->
+
+        <div class="pag-actions">
+
+            <button class="btn-secondary" onclick="closeM('modalPago')">
+                Cancelar
+            </button>
+
+            <button id="btnGuardarPago">
+
+                Guardar Pago
+
+            </button>
+
+            <button id="btnGuardarImprimir">
+
+                Guardar e Imprimir
+
+            </button>
+
+        </div>

@@ -1,0 +1,1148 @@
+/* ==========================================================
+   ARATECH-SYS
+   MOTOR DE COBROS
+========================================================== */
+
+/*=========================================
+BOTÓN CERRAR
+=========================================*/
+
+.pago-modal{
+
+    position:relative;
+
+}
+
+.pago-modal .icon-btn{
+
+    position:absolute;
+
+    top:18px;
+
+    right:18px;
+
+    width:28px;
+
+    height:28px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:var(--radius-sm);
+
+    border:1px solid rgba(255,255,255,.15);
+
+    background:rgba(255,255,255,.05);
+
+    color:#ffffff;
+
+    cursor:pointer;
+
+   transition:var(--transition-fast);
+
+}
+
+.pago-modal .icon-btn:hover{
+
+    background:var(--accent);
+
+    border-color:var(--accent);
+
+    transform:scale(1.05);
+
+}
+
+
+
+/*=========================================
+SALDOS
+=========================================*/
+
+#pag-saldo {
+
+    font-size: 22px;
+
+    font-weight: 700;
+
+}
+
+#pag-saldo.ok {
+
+    color: #22c55e;
+
+}
+
+#pag-saldo.danger {
+
+    color: #ef4444;
+
+}
+
+#pag-saldo.warning {
+
+    color: #f59e0b;
+
+}
+
+.pag-metodos {
+
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 10px;
+
+    margin: 18px 0;
+
+}
+
+.pag-btn{
+
+    color:#ffffff;
+
+    font-weight:700;
+
+}
+
+.pag-btn span{
+
+    color:#ffffff !important;
+
+    font-size:15px;
+
+    font-weight:700;
+
+}
+
+.pag-btn i,
+
+.pag-btn svg{
+
+    color:inherit;
+
+}
+
+.pag-btn:hover{
+
+    color:#ffffff;
+
+}
+
+.pag-btn.active{
+
+    color:#ffffff;
+
+}
+
+.pag-btn{
+
+    min-height:60px;
+
+    border-radius:var(--radius-lg);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:var(--space-12);
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    transition:var(--transition-fast);
+
+}
+
+
+.pag-btn:hover{
+
+    transform:translateY(calc(var(--space-2) * -1));
+
+    border-color:var(--accent);
+
+    box-shadow:0 0 14px rgba(30,144,255,.25);
+
+}
+/* ==========================================================
+   ARATECH-SYS
+   MOTOR DE COBROS UI v2.0
+   (Agregar debajo del CSS existente)
+========================================================== */
+
+/*=========================================
+TARJETAS
+=========================================*/
+
+.pag-card{
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    border-radius:var(--radius-lg); 
+
+    padding:var(--space-20);
+
+    margin-bottom:var(--space-20);
+
+    backdrop-filter:blur(8px);
+
+}
+
+.pag-card-full{
+
+    width:100%;
+
+}
+
+/*=========================================
+TÍTULOS
+=========================================*/
+
+.pag-card-title{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:var(--space-10);
+
+    margin-bottom:var(--space-16);
+
+    font-size:15px;
+
+    font-weight:700;
+
+    color:var(--text);
+
+    letter-spacing:.4px;
+
+}
+
+/*=========================================
+RESUMEN
+=========================================*/
+
+.pag-resumen-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:var(--space-14);
+
+}
+
+.pag-item{
+
+    background:rgba(255,255,255,.025);
+
+    border:1px solid rgba(255,255,255,.06);
+
+    border-radius:var(--radius-lg);
+
+    padding:var(--space-14);
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:var(--space-8);
+
+    transition:var(--transition-fast);
+}
+
+.pag-item:hover{
+
+    transform:translateY(calc(var(--space-2) * -1));
+
+    border-color:var(--accent);
+
+}
+
+.pag-item span{
+
+    color:var(--text2);
+
+    font-size:12px;
+
+    text-transform:uppercase;
+
+    letter-spacing:.8px;
+
+}
+
+.pag-item strong{
+
+    font-size:18px;
+
+    font-weight:700;
+
+}
+
+/*=========================================
+SALDO
+=========================================*/
+
+.pag-item.saldo{
+
+    background:color-mix(in srgb, var(--success) 8%, transparent);
+
+}
+
+/*=========================================
+COBRO
+=========================================*/
+
+.pag-cobro-box{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:var(--space-14);
+
+}
+
+/*=========================================
+MÉTODOS
+=========================================*/
+
+.pag-metodos{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:var(--space-14);
+
+    margin-top:var(--space-20);
+
+}
+
+.pag-btn{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:var(--space-10);
+
+    min-height:58px;
+
+    font-size:15px;
+
+    font-weight:700;
+
+}
+
+.pag-btn span{
+
+    font-size:15px;
+
+}
+
+/*=========================================
+PANEL
+=========================================*/
+
+.pag-panel-card{
+
+   margin-top:22px;
+
+}
+
+/*=========================================
+HISTORIAL
+=========================================*/
+
+#pagHistorial{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:var(--space-14);
+
+}
+
+/*=========================================
+OBSERVACIONES
+=========================================*/
+
+#pag-observaciones{
+
+    min-height:110px;
+
+    resize:vertical;
+
+}
+
+/*=========================================
+FOOTER
+=========================================*/
+
+.pag-footer{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-end;
+
+    gap:var(--space-20);
+
+    margin-top:22px;
+
+    flex-wrap:wrap;
+
+}
+
+.pag-footer-buttons{
+
+    display:flex;
+
+    gap:var(--space-12);
+
+    flex-wrap:wrap;
+
+}
+
+/*=========================================
+FORMATO
+=========================================*/
+
+.pag-print-options{
+
+    min-width:260px;
+
+}
+
+/*=========================================
+BOTONES
+=========================================*/
+
+.pag-footer .btn{
+
+    min-width:170px;
+
+}
+
+/*=========================================
+RESPONSIVE
+=========================================*/
+
+@media(max-width:900px){
+
+    .pag-resumen-grid{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+}
+
+@media(max-width:640px){
+
+    .pag-resumen-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .pag-metodos{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .pag-footer{
+
+        flex-direction:column;
+
+        align-items:stretch;
+
+    }
+
+    .pag-footer-buttons{
+
+        flex-direction:column;
+
+    }
+
+    .pag-footer .btn{
+
+        width:100%;
+
+    }
+
+}
+
+/* ==========================================================
+   MOTOR DE COBROS
+   ETAPA 2.2 - COMPACTACIÓN DEL LAYOUT
+========================================================== */
+
+/*----------------------------------
+Tarjetas más compactas
+----------------------------------*/
+
+.pag-card{
+
+    padding:var(--space-14);
+
+    margin-bottom:var(--space-14);
+
+}
+
+/*----------------------------------
+Título
+----------------------------------*/
+
+.pag-card-title{
+
+    margin-bottom:var(--space-12);
+
+    font-size:14px;
+
+}
+
+/*----------------------------------
+Resumen
+----------------------------------*/
+
+.pag-resumen-grid{
+
+    gap:var(--space-10);
+
+}
+
+.pag-item{
+
+    padding:var(--space-12);
+
+    min-height:72px;
+
+}
+
+.pag-item span{
+
+    font-size:11px;
+
+}
+
+.pag-item strong{
+
+    font-size:15px;
+
+}
+
+/*----------------------------------
+Registrar Cobro
+----------------------------------*/
+
+.pag-cobro-box{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:var(--space-14) 18px;
+
+    align-items:end;
+
+}
+
+.pag-cobro-box label{
+
+    margin-bottom:var(--space-4);
+
+}
+
+.pag-cobro-box input,
+
+.pag-cobro-box select{
+
+    margin-bottom:0;
+
+}
+
+/* El importe ocupa todo el ancho */
+
+.pag-cobro-box > label:nth-of-type(2),
+
+.pag-cobro-box > #pagImporte{
+
+    grid-column:1 / -1;
+
+}
+
+/* Botón ocupa todo el ancho */
+
+#btnSaldoCompleto{
+
+    grid-column:1 / -1;
+
+}
+
+/*----------------------------------
+Métodos
+----------------------------------*/
+
+.pag-metodos{
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:var(--space-10);
+
+    margin-top:var(--space-14);
+}
+
+.pag-btn{
+
+    min-height:48px;
+
+   padding:var(--space-8);
+}
+
+/*----------------------------------
+Panel dinámico
+----------------------------------*/
+
+.pag-panel-card{
+
+    margin-top:var(--space-16);
+
+}
+
+/*----------------------------------
+Historial
+----------------------------------*/
+
+#pagHistorial{
+
+    gap:var(--space-10);
+
+}
+
+/*----------------------------------
+Observaciones
+----------------------------------*/
+
+#pag-observaciones{
+
+    min-height:80px;
+
+}
+
+/*----------------------------------
+Footer
+----------------------------------*/
+
+.pag-footer{
+
+    margin-top:var(--space-14);
+
+    display:grid;
+
+    grid-template-columns:260px 1fr;
+
+    gap:18px;
+
+    align-items:end;
+
+}
+
+.pag-footer-buttons{
+
+    justify-content:flex-end;
+
+}
+
+.pag-footer .btn{
+
+    min-width:150px;
+
+}
+
+/*----------------------------------
+Responsive
+----------------------------------*/
+
+@media(max-width:900px){
+
+    .pag-cobro-box{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .pag-metodos{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+    .pag-footer{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+@media(max-width:640px){
+
+    .pag-resumen-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .pag-metodos{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .pag-footer-buttons{
+
+        flex-direction:column;
+
+    }
+
+    .pag-footer .btn{
+
+        width:100%;
+
+    }
+
+}
+
+/* ==========================================================
+   MODAL DEVOLUCIÓN
+   UI v2.0
+========================================================== */
+
+#modalDevolucion .mo{
+
+    width:min(760px,94vw);
+
+    border-radius:var(--radius-lg);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    background:var(--bg2);
+
+    box-shadow:0 18px 60px rgba(0,0,0,.35);
+
+}
+
+#modalDevolucion .modal-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:20px;
+
+    padding-bottom:var(--space-14);
+
+    border-bottom:1px solid rgba(255,255,255,.06);
+
+}
+
+#modalDevolucion .modal-header h2{
+
+    margin:0;
+
+    font-size:18px;
+
+    font-weight:700;
+
+}
+
+#modalDevolucion .icon-btn{
+
+    width:38px;
+
+    height:38px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:var(--radius-sm);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    background:rgba(255,255,255,.04);
+
+    color:#fff;
+
+    transition:var(--transition-fast);
+
+}
+
+#modalDevolucion .icon-btn:hover{
+
+    background:var(--accent);
+
+    border-color:var(--accent);
+
+}
+
+/*=========================================
+FORMULARIO
+=========================================*/
+
+#modalDevolucion .fr{
+
+   gap:var(--space-18);
+
+}
+
+#modalDevolucion .fi{
+
+    margin-bottom:var(--space-18);
+
+}
+
+#modalDevolucion label{
+
+    display:block;
+
+    margin-bottom:var(--space-8);
+
+    font-size:12px;
+
+    font-weight:700;
+
+    color:var(--accent2);
+
+    text-transform:uppercase;
+
+    letter-spacing:.8px;
+
+}
+
+#modalDevolucion input,
+
+#modalDevolucion select,
+
+#modalDevolucion textarea{
+
+    width:100%;
+
+    border-radius:var(--radius-md);
+
+}
+
+#modalDevolucion textarea{
+
+    min-height:110px;
+
+    resize:vertical;
+
+}
+
+/*=========================================
+BOTONES
+=========================================*/
+
+#modalDevolucion .pag-actions{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:var(--space-12);
+
+    margin-top:22px;
+
+    padding-top:var(--space-18);
+
+    border-top:1px solid rgba(255,255,255,.06);
+
+}
+
+#modalDevolucion .pag-actions .btn{
+
+    min-width:180px;
+
+}
+
+#modalDevolucion #btnConfirmarDevolucion{
+
+    background:linear-gradient(
+        135deg,
+        var(--pri),
+        #1976d2
+    );
+
+    color:#fff;
+
+    border:none;
+
+}
+
+#modalDevolucion #btnConfirmarDevolucion:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:0 8px 22px rgba(30,144,255,.35);
+
+}
+
+/*=========================================
+RESPONSIVE
+=========================================*/
+
+@media(max-width:640px){
+
+    #modalDevolucion .pag-actions{
+
+        flex-direction:column;
+
+    }
+
+    #modalDevolucion .pag-actions .btn{
+
+        width:100%;
+
+    }
+
+}
+
+/* ==========================================================
+   LIBRO MAYOR
+   UI v2.0
+========================================================== */
+
+#modalLibroMayor .mo{
+
+    width:min(1200px,96vw);
+
+    max-height:90vh;
+
+    border-radius:var(--radius-lg);
+
+    overflow:hidden;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    background:var(--bg2);
+
+    box-shadow:0 18px 60px rgba(0,0,0,.35);
+
+}
+
+/*=========================================
+HEADER
+=========================================*/
+
+#modalLibroMayor .modal-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding-bottom:var(--space-16);
+
+    margin-bottom:var(--space-18);
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+#modalLibroMayor .modal-header h2{
+
+    margin:0;
+
+    font-size:18px;
+
+    font-weight:700;
+
+}
+
+#modalLibroMayor .icon-btn{
+
+    width:38px;
+
+    height:38px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:var(--radius-sm);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    background:rgba(255,255,255,.04);
+
+    color:#fff;
+
+    transition:var(--transition-fast);
+
+}
+
+#modalLibroMayor .icon-btn:hover{
+
+    background:var(--accent);
+
+    border-color:var(--accent);
+
+}
+
+/*=========================================
+TABLA
+=========================================*/
+
+#modalLibroMayor table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    overflow:hidden;
+
+    border-radius:14px;
+
+}
+
+#modalLibroMayor thead{
+
+    background:rgba(255,255,255,.04);
+
+}
+
+#modalLibroMayor th{
+
+    padding:14px;
+
+    text-align:left;
+
+    font-size:12px;
+
+    text-transform:uppercase;
+
+    letter-spacing:.8px;
+
+    color:#7ec8ff;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+#modalLibroMayor td{
+
+    padding:16px 14px;
+
+    border-bottom:1px solid rgba(255,255,255,.05);
+
+    vertical-align:middle;
+
+}
+
+#modalLibroMayor tbody tr{
+
+    transition:var(--transition-fast);
+
+}
+
+#modalLibroMayor tbody tr:hover{
+
+    background:rgba(255,255,255,.03);
+
+}
+
+/*=========================================
+COLORES
+=========================================*/
+
+#modalLibroMayor .monto{
+
+    color:#22c55e;
+
+    font-weight:700;
+
+}
+
+#modalLibroMayor .descuento{
+
+    color:#f59e0b;
+
+    font-weight:700;
+
+}
+
+#modalLibroMayor .fecha{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:3px;
+
+}
+
+#modalLibroMayor .fecha small{
+
+    color:var(--text2);
+
+}
+
+#modalLibroMayor .usuario{
+
+    font-weight:600;
+
+}
+
+#modalLibroMayor .metodo{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    font-weight:600;
+
+}
+
+/*=========================================
+RESPONSIVE
+=========================================*/
+
+@media(max-width:900px){
+
+    #modalLibroMayor{
+
+        overflow:auto;
+
+    }
+
+    #modalLibroMayor table{
+
+        min-width:900px;
+
+    }
+
+}

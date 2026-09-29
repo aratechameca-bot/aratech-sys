@@ -1,0 +1,366 @@
+/* =======================================================
+   MODAL GARANTÍA
+======================================================= */
+
+.gar-wrap{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:var(--space-18);
+
+}
+
+.gar-header {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: var(--space-20) 22px;
+
+    border: 1px solid var(--border);
+
+    border-radius: var(--radius-md);
+
+    background: linear-gradient(180deg,
+            rgba(30, 144, 255, .08),
+            rgba(30, 144, 255, .03));
+
+}
+
+.gar-folio {
+
+    font-family: var(--fh);
+
+    font-size: 30px;
+
+    font-weight: 700;
+
+    color: var(--accent);
+
+}
+
+.gar-sub {
+
+    margin-top: var(--space-6);
+
+    color: var(--text2);
+
+    font-size: 13px;
+
+}
+
+.gar-status {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: var(--space-10);
+
+    padding: var(--space-10) var(--space-16);
+
+    border-radius: var(--radius-pill);
+
+    border: 1px solid currentColor;
+
+    font-weight: 700;
+
+    font-size: 14px;
+
+    background: rgba(255, 255, 255, .03);
+
+}
+
+.gar-grid {
+
+    display: grid;
+
+    grid-template-columns: 1.3fr .9fr;
+
+    gap: var(--space-18);
+}
+
+@media(max-width:900px) {
+
+    .gar-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+.gar-card {
+
+    background: var(--bg3);
+
+    border: 1px solid var(--border);
+
+    border-radius: var(--radius-md);
+
+    padding: var(--space-18);
+
+}
+
+.gar-card-title {
+
+    font-family: var(--fh);
+
+    font-size: 11px;
+
+    color: var(--accent);
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+
+    margin-bottom: var(--space-16);
+}
+
+.gar-row {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: var(--space-20);
+
+    padding: var(--space-12) 0;
+
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+
+}
+
+.gar-row:last-child {
+
+    border-bottom: none;
+
+}
+
+.gar-label {
+
+    color: var(--text2);
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    letter-spacing: .5px;
+
+}
+
+.gar-value {
+
+    color: var(--text);
+
+    font-weight: 600;
+
+    text-align: right;
+
+}
+
+.gar-mini {
+
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: var(--space-16);
+
+}
+
+.gar-box {
+
+    background: var(--bg3);
+
+    border: 1px solid var(--border);
+
+    border-radius: var(--radius-md);
+
+    padding: var(--space-18);
+
+}
+
+.gar-box-title {
+
+    font-size: 11px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
+
+    color: var(--accent);
+
+    margin-bottom: var(--space-8);
+}
+
+.gar-box-value {
+
+    font-size: 22px;
+
+    font-family: var(--fh);
+
+    font-weight: 700;
+
+}
+
+.gar-actions {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: var(--space-10);
+
+    margin-top: var(--space-10);
+
+    flex-wrap: wrap;
+
+}
+
+@media(max-width:640px) {
+
+    .gar-mini {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .gar-header {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 16px;
+
+    }
+
+    .gar-folio {
+
+        font-size: 24px;
+
+    }
+
+}
+
+.stats-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+
+    gap: var(--space-14);
+
+}
+
+.gar-kpis {
+
+    display: grid;
+
+    grid-template-columns: repeat(5, 1fr);
+
+    gap: var(--space-14);
+
+    margin-bottom: var(--space-16);
+
+}
+
+.gar-kpi {
+
+    background: var(--bg2);
+
+    border: 1px solid var(--border);
+
+    border-radius: var(--radius-lg);
+
+    padding: var(--space-22);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition: var(--transition-fast);
+
+    min-height: 145px;
+
+
+
+}
+
+.gar-kpi:hover {
+
+    border-color: var(--accent);
+
+    transform: translateY(calc(var(--space-4) * -1));
+
+    box-shadow: 0 12px 24px rgba(0, 0, 0, .25);
+
+}
+
+.gar-kpi.active {
+
+    border: 1px solid var(--accent);
+
+    background: rgba(30, 144, 255, .08);
+
+}
+
+.gar-kpi-num {
+
+    font-size: 48px;
+
+    font-family: var(--fh);
+
+    font-weight: 700;
+
+    line-height: 1;
+
+    margin: var(--space-10) 0;
+
+}
+
+.gar-kpi-title {
+
+    font-size: 14px;
+
+    color: var(--text2);
+
+    font-weight: 600;
+
+    letter-spacing: .5px;
+
+}
+
+@media(max-width:1300px) {
+
+    .gar-kpis {
+
+        grid-template-columns: repeat(3, 1fr);
+
+    }
+
+}
+
+@media(max-width:900px) {
+
+    .gar-kpis {
+
+        grid-template-columns: repeat(2, 1fr);
+
+    }
+
+}

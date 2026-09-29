@@ -1,0 +1,11 @@
+{
+  "projects": {
+    "default": "aratech-ecosystem"
+  },
+  "targets": {
+    "aratech-ecosystem": {
+      "hosting": {}
+    }
+  },
+  "etags": {}
+}

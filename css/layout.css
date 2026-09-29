@@ -1,4 +1,6 @@
- * {
+*
+ 
+ {
       box-sizing: border-box;
       margin: 0;
       padding: 0
@@ -20,47 +22,24 @@
     }
 
      #sidebar {
-      width: 220px;
-      min-height: 100vh;
-      background: var(--bg2);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 100;
-      overflow-y: auto
+        width: 220px;
+        height: 100vh;
+        background: var(--bg2);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 100;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
     }
 
-    .sb-logo {
-      padding: 16px 16px 14px;
-      border-bottom: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(30, 144, 255, 0.08) 0%, transparent 100%)
-    }
-
-    .sb-logo .brand {
-      font-family: 'League Spartan', sans-serif;
-      font-size: 19px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: 3px;
-      line-height: 1
-    }
-
-    .sb-logo .sub {
-      font-size: 8px;
-      color: var(--accent2);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-top: 2px;
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 500
-    }
-
-    .sb-nav {
-      flex: 1;
-      padding: 6px 0
+    .sb-nav{
+        flex:1;
+        padding:2px 0;
     }
 
     .sb-section {
@@ -68,23 +47,34 @@
       color: var(--text3);
       letter-spacing: 2px;
       text-transform: uppercase;
-      padding: 10px 16px 3px;
+      padding:8px 16px 2px;
       font-family: 'League Spartan', sans-serif;
       font-weight: 600
     }
 
-    .sb-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 16px;
-      cursor: pointer;
-      transition: all .2s;
-      color: var(--text2);
-      font-size: 12px;
-      border-left: 3px solid transparent;
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 500
+    .sb-item{
+
+        display:flex;
+        align-items:center;
+        gap:var(--space-10);
+
+        padding:var(--space-8) var(--space-16);
+
+        cursor:pointer;
+
+        color:var(--text2);
+
+        font-size:12px;
+        font-family:'Montserrat',sans-serif;
+        font-weight:500;
+
+        border-left:3px solid transparent;
+
+        transition:
+            background var(--transition),
+            color var(--transition),
+            border-color var(--transition);
+
     }
 
     .sb-item:hover {
@@ -98,10 +88,31 @@
       border-left-color: var(--accent)
     }
 
-    .sb-item .icon {
-      font-size: 15px;
-      width: 18px;
-      text-align: center
+    .sb-item .icon{
+
+        width:22px;
+        min-width:22px;
+
+        display:flex;
+        align-items:center;
+        justify-content:center;
+
+        font-size:15px;
+
+        color:inherit;
+
+        transition:
+            color var(--transition),
+            transform var(--transition);
+
+    }
+
+    .sb-item .icon i{
+
+        display:block;
+        width:100%;
+        text-align:center;
+
     }
 
     .sb-badge {
@@ -114,43 +125,106 @@
       font-weight: 600
     }
 
-    .sb-footer {
-      padding: 10px 16px;
-      border-top: 1px solid var(--border);
-      font-size: 11px;
-      color: var(--text3)
-    }
+   .sb-footer{
 
-    #main {
-      margin-left: 220px;
-      flex: 1;
-      display: flex;
-      flex-direction: column
-    }
+    padding:10px 16px;
 
-    .topbar {
-      height: 52px;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      gap: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      border-left: 3px solid var(--accent)
-    }
+    border-top:1px solid var(--border);
 
-    .topbar h1 {
-      font-family: 'League Spartan', sans-serif;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      flex: 1;
-      color: var(--text);
-      text-transform: uppercase
-    }
+    font-size:11px;
+
+    color:var(--text3);
+
+    text-align:center;
+
+}
+
+    #main{
+    margin-left:220px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+}
+
+    .topbar{
+
+    min-height:78px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:transparent;
+
+    position:sticky;
+
+    top:0;
+
+    z-index:50;
+
+    padding:16px 24px 12px;
+
+}
+
+/* ==========================================================
+   TOPBAR CENTER
+========================================================== */
+
+.topbar-center{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:10px;
+
+    width:100%;
+
+    width:min(100%,760px);
+
+}
+
+.topbar > :last-child{
+
+    justify-self:end;
+
+}
+
+.topbar-right{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+}
+
+    .topbar h1{
+
+    flex:0 0 auto;
+
+    margin:0;
+
+    font-family:'League Spartan',sans-serif;
+
+    font-size:22px;
+
+    font-weight:800;
+
+    letter-spacing:2px;
+
+    color:var(--text);
+
+    text-transform:uppercase;
+
+}
 
     .badge-alert {
       background: rgba(255, 23, 68, .15);
@@ -162,9 +236,9 @@
       cursor: pointer
     }
 
-    .content {
-      padding: 20px;
-      flex: 1
+    .content{
+        flex:1;
+        padding:16px 20px 20px 40px;
     }
 
     .panel {
@@ -174,3 +248,866 @@
     .panel.active {
       display: block
     }
+
+/* ==========================================================
+   USER CHIP (SIDEBAR)
+========================================================== */
+
+.user-chip{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    margin:12px 12px 14px;
+
+    padding:10px 12px;
+
+    min-height:auto;
+
+    border-radius:12px;
+
+    background:transparent;
+
+    border:none;
+
+    cursor:pointer;
+
+    text-decoration:none;
+
+    transition:all .25s ease;
+
+     border-bottom:1px solid rgba(255,255,255,.05);
+
+    padding-bottom:12px;
+
+}
+
+.user-chip:hover{
+
+    background:rgba(117,208,250,.08);
+
+}
+
+.user-info{
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:flex-start;
+
+    gap:2px;
+
+    flex:1;
+
+    min-width:0;
+
+}
+
+.user-name{
+
+    font-family:'League Spartan',sans-serif;
+
+    font-size:14px;
+
+    font-weight:700;
+
+    color:#fff;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+.user-rol{
+
+    font-family:'Montserrat',sans-serif;
+
+    font-size:10px;
+
+    font-weight:700;
+
+    letter-spacing:1px;
+
+    color:var(--accent2);
+
+    text-transform:uppercase;
+
+}
+
+/* ==========================================================
+   AVATAR
+========================================================== */
+
+.user-avatar-wrap{
+
+    position:relative;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    margin-bottom:6px;
+
+}
+
+.user-avatar{
+
+    width:40px; 
+
+    height:40px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+    display:block;
+
+    border:3px solid rgba(117,208,250,.45);
+
+    background:#173754;
+
+    box-shadow:0 0 18px rgba(117,208,250,.20);
+
+}
+
+.user-avatar-placeholder{
+
+    width:40px; 
+
+    height:40px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:24px;
+
+    font-weight:800;
+
+    color:#fff;
+
+    background:linear-gradient(135deg,#1E90FF,#75D0FA);
+
+    border:3px solid rgba(117,208,250,.45);
+
+    box-shadow:0 0 18px rgba(117,208,250,.20);
+
+}
+
+/* ==========================================================
+   ONLINE
+========================================================== */
+
+.user-online{
+
+    position:absolute;
+
+    right:1px;
+
+    bottom:1px;
+
+    width:12px;
+
+    height:12px;
+
+    border-radius:50%;
+
+    background:#2ED573;
+
+    border:2px solid var(--bg2);
+
+    box-shadow:0 0 10px rgba(46,213,115,.70);
+
+    z-index:10;
+
+}
+
+/* ==========================================================
+   SIDEBAR HEADER
+========================================================== */
+
+.sb-logo{
+
+    position:relative;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:6px 10px 4px;
+
+    border-bottom:1px solid var(--border);
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(30,144,255,.08) 0%,
+            transparent 100%
+        );
+
+    /* overflow:hidden; */
+
+}
+
+.sb-logo img{
+
+    position:relative;
+
+    z-index:2;
+
+    width:180px;
+
+    max-width:100%;
+
+    height:auto;
+
+    display:block;
+
+    transition:.30s ease;
+
+}
+
+/* ==========================================================
+   TOPBAR SEARCH
+========================================================== */
+.topbar-search{
+
+    position:relative;
+
+    width:100%;
+
+    display:flex;
+
+    align-items:center;
+
+}
+
+.topbar-search:focus-within .search-icon{
+
+    color:rgba(117,208,250,.70);
+
+}
+
+/* ==========================================================
+   ARA SEARCH
+========================================================== */
+
+.search-icon{
+
+    position:absolute;
+
+    left:18px;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    font-size:15px;
+
+    color:rgba(255,255,255,.32);
+
+    z-index:20;
+
+    pointer-events:none;
+
+    transition:opacity .25s ease,color .25s ease;
+
+}
+
+.search-shortcut{
+
+    position:absolute;
+
+    right:18px;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    font-family:'League Spartan',sans-serif;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    letter-spacing:.8px;
+
+    color:rgba(255,255,255,.40);
+
+    pointer-events:none;
+
+}
+
+/* ==========================================================
+   TOPBAR BOTTOM
+========================================================== */
+
+.topbar-bottom{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:16px;
+
+    
+
+}
+
+
+#global-search{
+
+     position:relative;
+
+    z-index:1;
+
+    width:100%;
+
+    height:46px;
+
+    padding:0 88px 0 46px;
+
+    border:none;
+
+    outline:none;
+
+    border-radius:999px;
+
+    background:rgba(255,255,255,.05);
+
+    color:#fff;
+
+    font-size:14px;
+
+    font-family:'Montserrat',sans-serif;
+
+    font-weight:500;
+
+    backdrop-filter:blur(18px);
+
+    -webkit-backdrop-filter:blur(18px);
+
+    box-shadow:
+
+        inset 0 0 0 1px rgba(255,255,255,.05),
+
+        0 6px 18px rgba(0,0,0,.18);
+
+   transition:
+
+    transform .18s ease,
+
+    box-shadow .25s ease,
+
+    background .25s ease;
+
+}
+
+#global-search::placeholder{
+
+    color:rgba(255,255,255,.45);
+
+    font-weight:500;
+
+}
+
+#global-search:focus{
+
+    background:rgba(255,255,255,.08);
+
+    border-radius:22px 22px 12px 12px;
+
+    transform:translateY(-1px);
+
+    box-shadow:
+
+        inset 0 0 0 1px rgba(117,208,250,.40),
+
+        0 12px 30px rgba(0,0,0,.35),
+
+        0 0 18px rgba(30,144,255,.12);
+
+}
+
+/* ==========================================================
+   ARA SEARCH PANEL
+========================================================== */
+
+#search-res{
+
+    display:block;
+
+    visibility:hidden;
+
+    pointer-events:none;
+
+    position:absolute;
+
+    top:52px;
+
+    left:50%;
+
+    width:100%;
+
+    width:min(100%,760px);
+
+    min-height:140px;
+
+    max-height:520px;
+
+    overflow-y:auto;
+
+    background:rgba(16,42,67,.88);
+
+    backdrop-filter:blur(26px);
+
+    -webkit-backdrop-filter:blur(26px);
+
+    border:1px solid rgba(117,208,250,.12);
+
+    border-radius:22px;
+
+    box-shadow:
+
+        0 18px 45px rgba(0,0,0,.32),
+
+        0 0 22px rgba(30,144,255,.08),
+
+        inset 0 1px 0 rgba(255,255,255,.04);
+
+    z-index:500;
+
+    padding:14px;
+
+    opacity:0;
+
+    transform:translateX(-50%) translateY(-10px) scale(.985);
+
+    transition:
+
+        opacity .18s ease,
+
+        transform .22s cubic-bezier(.22,.61,.36,1),
+
+        visibility .18s ease;
+
+}
+
+#search-res.open{
+
+    visibility:visible;
+
+    pointer-events:auto;
+
+    opacity:1;
+
+    transform:translateX(-50%) translateY(0) scale(1);
+
+}
+
+/* ==========================================================
+   PAGE HEADER
+========================================================== */
+
+.page-header{
+
+    margin-bottom:16px;
+
+}
+
+.page-header h1{
+
+    margin:0 0 4px;
+
+    font-family:'League Spartan',sans-serif;
+
+    font-size:30px;
+
+    font-weight:800;
+
+    letter-spacing:2px;
+
+    color:var(--text);
+
+    text-transform:uppercase;
+
+    line-height:1;
+
+}
+
+.page-header h2{
+
+    margin:0;
+
+    line-height:1.2;
+
+}
+
+/* ==========================================================
+   TOPBAR DATE
+========================================================== */
+
+#tdate{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    height:46px;
+
+    padding:0 18px;
+
+    border-radius:999px;
+
+    background:rgba(255,255,255,.05);
+
+    color:var(--text);
+
+    font-family:'Montserrat',sans-serif;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    white-space:nowrap;
+
+    backdrop-filter:blur(18px);
+
+    -webkit-backdrop-filter:blur(18px);
+
+    box-shadow:
+
+        inset 0 0 0 1px rgba(255,255,255,.05),
+
+        0 6px 18px rgba(0,0,0,.18);
+
+    transition:all .25s ease;
+
+}
+
+#tdate:hover{
+
+    background:rgba(255,255,255,.08);
+
+    box-shadow:
+
+        inset 0 0 0 1px rgba(117,208,250,.25),
+
+        0 10px 26px rgba(0,0,0,.28);
+
+}
+
+/* ==========================================================
+   ARA SEARCH SECTIONS
+========================================================== */
+
+.ara-search-section{
+
+    padding:8px 14px;
+
+    font-family:'League Spartan',sans-serif;
+
+    font-size:10px;
+
+    font-weight:700;
+
+    letter-spacing:2px;
+
+    text-transform:uppercase;
+
+    color:var(--text3);
+
+    border-bottom:1px solid var(--border);
+
+}
+
+/* ==========================================================
+   CONNECTION STATUS
+========================================================== */
+
+.status-online{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    height:46px;
+
+    padding:0 18px;
+
+    border-radius:999px;
+
+    background:rgba(0,230,118,.08);
+
+    border:1px solid rgba(0,230,118,.20);
+
+    color:var(--green);
+
+    font-family:'Montserrat',sans-serif;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    white-space:nowrap;
+
+    backdrop-filter:blur(18px);
+
+    -webkit-backdrop-filter:blur(18px);
+
+    box-shadow:
+
+        inset 0 0 0 1px rgba(255,255,255,.03),
+
+        0 6px 18px rgba(0,0,0,.18);
+
+}
+
+/* ==========================================================
+   ARA SEARCH HEADER
+========================================================== */
+
+.ara-search-header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:4px 8px 14px;
+
+    margin-bottom:10px;
+
+    border-bottom:1px solid rgba(255,255,255,.06);
+
+}
+
+.ara-search-title{
+
+    font-family:'League Spartan',sans-serif;
+
+    font-size:18px;
+
+    font-weight:700;
+
+    letter-spacing:2px;
+
+    color:#fff;
+
+}
+
+.ara-search-subtitle{
+
+    margin-top:4px;
+
+    font-size:11px;
+
+    color:var(--text2);
+
+    font-family:'Montserrat',sans-serif;
+
+}
+
+/* ==========================================================
+   ARA SEARCH OVERLAY
+========================================================== */
+
+#search-overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.18);
+
+    opacity:0;
+
+    visibility:hidden;
+
+    pointer-events:none;
+
+    transition:
+
+        opacity .22s ease,
+
+        visibility .22s ease;
+
+    z-index:450;
+
+}
+
+#search-overlay.open{
+
+    opacity:1;
+
+    visibility:visible;
+
+}
+
+/* ==========================================================
+   ARA SEARCH ACTIVE
+========================================================== */
+
+body.search-open .content{
+
+    transition:
+
+        filter .25s ease,
+
+        transform .25s ease,
+
+        opacity .25s ease;
+
+}
+
+body.search-open .content{
+
+    filter:blur(8px);
+
+    transform:scale(.975);
+
+    opacity:.38;
+
+}
+
+/* ==========================================================
+   ARA SEARCH ITEM
+========================================================== */
+
+.ara-search-item{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:18px;
+
+    padding:14px 16px;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    transition:
+
+        background .18s ease,
+
+        transform .18s ease,
+
+        box-shadow .18s ease;
+
+}
+
+.ara-search-item:hover{
+
+    background:rgba(117,208,250,.08);
+
+    transform:translateX(4px);
+
+}
+
+.ara-search-item+.ara-search-item{
+
+    margin-top: 4px;
+
+}
+
+.ara-search-info{
+
+    flex:1;
+
+}
+
+.ara-search-name{
+
+    font-size:13px;
+
+    font-weight:600;
+
+    color:#fff;
+
+}
+
+.ara-search-desc{
+
+    margin-top:3px;
+
+    font-size:11px;
+
+    color:var(--text2);
+
+}
+
+/* ==========================================================
+   ARA SEARCH SECTIONS
+========================================================== */
+
+.ara-search-section{
+
+    margin:22px 0 12px;
+
+    padding:0;
+
+    font-family:'League Spartan',sans-serif;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    letter-spacing:2px;
+
+    text-transform:uppercase;
+
+    color:rgba(117,208,250,.55);
+
+}
+
+
+.ara-search-section:first-of-type{
+
+    margin-top:8px;
+
+}
+
+/* ==========================================================
+   ARA SEARCH SELECTED
+========================================================== */
+
+.ara-search-item.selected{
+
+    background:rgba(117,208,250,.12);
+
+    transform:translateX(6px);
+
+    box-shadow:
+
+        inset 0 0 0 1px rgba(117,208,250,.18);
+
+}
+
