@@ -31,11 +31,11 @@ function renderTicketComments(ticketId) {
     </div>
     
     <div style="font-weight:600">
-      ${c.autor === "ARABOT" ? "🤖 ARABOT" : "👤 " + (c.autor || "Usuario")}
+      ${c.autor === "ARABOT" ? "🤖 ARABOT" : "👤 " + escHTML(c.autor || "Usuario")}
     </div>
       
     <div style="margin-top:6px">
-      ${c.comentario || ""}
+      ${escHTML(c.comentario || "")}
     </div>
 
     <div style="

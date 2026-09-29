@@ -486,22 +486,50 @@ function filtInv() {
   );
 }
 async function adjStk(sku) {
+  // [FASE 4] Inventario de solo consulta para el técnico
+  if (window.currentUser?.rol === "tecnico") {
+    notify("El inventario es solo de consulta para tu rol");
+    return;
+  }
+
   const d = prompt("Cantidad a agregar (+) o retirar (-):");
   if (!d) return;
   const n = parseInt(d);
   if (isNaN(n)) return;
-  const inv = DB.get("inventario");
-  const i = inv.findIndex((p) => p.sku === sku);
-  if (i < 0) return;
-  inv[i].stock = Math.max(0, inv[i].stock + n);
-  DB.set("inventario", inv);
+  if (n === 0) return;
 
-  await DATA.update("inventario", inv[i].id, inv[i]);
+  // [FASE 4] Ajuste mediante el motor: usa el stock real del servidor y deja
+  // registro del movimiento. Antes se escribía el número calculado localmente.
+  const resultado = await INVENTARIO_ENGINE.ajuste({
+    productoId: sku,
+    cantidad: n,
+    modulo: "INVENTARIO",
+    origen: "AJUSTE_MANUAL",
+    observaciones: "Ajuste manual de stock",
+  });
+
+  if (!resultado.ok) {
+    ARABOT.alert({
+      title: "No se pudo ajustar el stock",
+
+      message: resultado.error,
+
+      details: "El inventario no se modificó.",
+    });
+
+    return;
+  }
 
   rndInv();
 }
 
 function editProd(sku) {
+  // [FASE 4] Inventario de solo consulta para el técnico
+  if (window.currentUser?.rol === "tecnico") {
+    notify("El inventario es solo de consulta para tu rol");
+    return;
+  }
+
   const inv = DB.get("inventario");
   const p = inv.find((x) => x.sku === sku);
   if (!p) return;
@@ -646,6 +674,10 @@ async function updateProd(sku) {
     return;
   }
 
+  // [FASE 4] El stock ya no se sobrescribe directamente: si cambió, se aplica
+  // la diferencia con el motor de inventario (stock real del servidor).
+  const stockOriginal = Number(inv[i].stock || 0);
+
   inv[i].nombre = nm;
 
   inv[i].marca = marca;
@@ -655,8 +687,6 @@ async function updateProd(sku) {
   inv[i].cond = document.getElementById("pr-cond").value;
 
   inv[i].ubicacion = document.getElementById("pr-ubi").value;
-
-  inv[i].stock = stock;
 
   inv[i].min = minimo;
 
@@ -674,17 +704,21 @@ async function updateProd(sku) {
 
   inv[i].precio = pr;
 
-  inv[i].valor_inventario = stock * co;
+  inv[i].valor_inventario = stockOriginal * co;
 
-  inv[i].valor_venta = stock * pr;
+  inv[i].valor_venta = stockOriginal * pr;
 
-  inv[i].utilidad_potencial = (pr - co) * stock;
+  inv[i].utilidad_potencial = (pr - co) * stockOriginal;
 
   inv[i].margen_porcentaje =
     co > 0 ? Number((((pr - co) / co) * 100).toFixed(2)) : 0;
 
   inv[i].estado_inventario =
-    stock <= 0 ? "AGOTADO" : stock <= minimo ? "STOCK_BAJO" : "DISPONIBLE";
+    stockOriginal <= 0
+      ? "AGOTADO"
+      : stockOriginal <= minimo
+        ? "STOCK_BAJO"
+        : "DISPONIBLE";
 
   inv[i].garantia_dias = garantia;
 
@@ -700,7 +734,31 @@ async function updateProd(sku) {
 
   DB.set("inventario", inv);
 
-  await DATA.update("inventario", inv[i].id, inv[i]);
+  // [FASE 4] Se guardan los datos del producto SIN el campo stock
+  const { stock: _stockLocal, ...datosSinStock } = inv[i];
+
+  await DATA.update("inventario", inv[i].id, datosSinStock);
+
+  if (stock !== stockOriginal) {
+    const resultado = await INVENTARIO_ENGINE.ajuste({
+      productoId: inv[i].id,
+      cantidad: stock - stockOriginal,
+      modulo: "INVENTARIO",
+      origen: "EDICION_PRODUCTO",
+      observaciones: `Ajuste desde edición de producto (${stockOriginal} → ${stock})`,
+    });
+
+    if (!resultado.ok) {
+      ARABOT.alert({
+        title: "Producto guardado, stock sin cambios",
+
+        message: resultado.error,
+
+        details:
+          "Los datos del producto se guardaron, pero no fue posible ajustar el stock.",
+      });
+    }
+  }
 
   resetProdForm();
 

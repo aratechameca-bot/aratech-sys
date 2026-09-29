@@ -26,6 +26,8 @@ const API = {
         "ticketconceptos",
         "cliente_avisos",
         "finanzas_movimientos",
+        // [FASE 4] Movimientos de inventario (el dashboard muestra los últimos 10)
+        "inventario_movimientos",
       ];
       // [FASE 1] allSettled: si una colección no está permitida para el rol
       // del usuario, las demás se cargan igual (antes fallaba toda la carga).
@@ -131,16 +133,77 @@ const API = {
   },
 
   // Obtener folio desde Firestore
+  // [FASE 4] Antes de entregar un folio se verifica en el servidor que no
+  // exista ya un registro con ese ID. Como guardar un registro usa set(), un
+  // folio repetido REEMPLAZABA el registro anterior. Si el contador quedó
+  // atrasado, se adelanta automáticamente al número más alto conocido.
   async getFolio(prefix) {
-    try {
-      return await DATA.nextFolio(prefix);
-    } catch (e) {
-      console.warn("Folio Firestore:", e);
+    const colecciones = window.FOLIO_COLS[prefix] || [];
 
-      // Respaldo local en caso de que Firestore no esté disponible
-      return folioLocal(prefix);
+    let minimo = 0;
+
+    for (let intento = 0; intento < 10; intento++) {
+      let folio;
+
+      try {
+        folio = await DATA.nextFolio(prefix, minimo);
+      } catch (e) {
+        console.warn("Folio Firestore:", e);
+
+        // Respaldo local en caso de que Firestore no esté disponible
+        return folioLocal(prefix);
+      }
+
+      if (!colecciones.length) return folio;
+
+      const ocupado = await folioOcupadoEnServidor(folio, colecciones);
+
+      if (!ocupado) return folio;
+
+      console.warn(`Folio ${folio} ya existe; se genera el siguiente.`);
+
+      // Adelantar el contador al número más alto que conozca este equipo
+      const numero = parseInt(String(folio).split("-").pop(), 10) || 0;
+
+      minimo = Math.max(minimo, numero, maxFolioConocido(prefix));
     }
+
+    throw new Error(`No se pudo generar un folio libre para ${prefix}.`);
   },
 };
+
+// [FASE 4] ¿Existe ya un documento con ese folio como ID?
+// Si no se puede consultar (p. ej. el rol no tiene permiso de lectura), se
+// considera libre para no bloquear la operación.
+async function folioOcupadoEnServidor(folio, colecciones) {
+  for (const col of colecciones) {
+    try {
+      const doc = await FB.db.collection(col).doc(String(folio)).get();
+
+      if (doc.exists) return true;
+    } catch (e) {
+      console.warn(`No se pudo verificar el folio ${folio} en ${col}:`, e?.code || e);
+    }
+  }
+
+  return false;
+}
+
+// Número de folio más alto registrado en la copia local para un prefijo
+function maxFolioConocido(prefix) {
+  const re = new RegExp("^" + prefix + "-(\\d+)$", "i");
+
+  let max = 0;
+
+  (window.FOLIO_COLS[prefix] || []).forEach((col) => {
+    (DB.get(col) || []).forEach((r) => {
+      const m = String(r?.folio || r?.id || "").match(re);
+
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    });
+  });
+
+  return max;
+}
 
 window.API = API;

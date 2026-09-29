@@ -27,7 +27,7 @@ ETAPA 8.6
   ├── Fase 1  Auth y operación             ✅
   ├── Fase 2  Functions + Storage          ✅
   ├── Fase 3  App Check                    🔴 En monitoreo
-  ├── Fase 4  Integridad de datos          ⏳
+  ├── Fase 4  Integridad de datos          🔴 Lista para publicar
   ├── Fase 5  Logs y exposición de errores ⏳
   └── Fase 6  Auditoría final Zero Trust   ⏳
             ↓
@@ -77,7 +77,9 @@ Clave reCAPTCHA Enterprise creada y app registrada; ARASYS envía App Check sin 
 - Límites por usuario en funciones sensibles.
 - Sustituye a Cloudflare/WAF y rate limiting. Cloudflare queda opcional, solo para DNS o dominio.
 
-### ⏳ Fase 4 — Integridad de datos
+### 🔴 Fase 4 — Integridad de datos (lista para publicar; matriz de roles pendiente)
+
+Detalle en `docs/CAMBIOS-FASE4.md`. Hallazgo: los movimientos de inventario se guardaban en una colección sin reglas (`movimientos_inventario`).
 
 - Inventario atómico (`FieldValue.increment` o transacción).
 - Folios sin sobrescritura: crear falla si el ID ya existe. Agregar `CLI`, `AVI` y `MOV` a `FOLIO_COLS`.

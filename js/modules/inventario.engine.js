@@ -33,6 +33,98 @@ const INVENTARIO_ENGINE = (() => {
     return inventario.find((p) => p.id === id || p.sku === id);
   }
 
+  // ============================================================
+  // [FASE 4] MOVIMIENTO ATÓMICO
+  // ============================================================
+  // Antes: el stock se calculaba con la copia local del navegador y se
+  // escribía el número final. Si dos equipos vendían el mismo producto a la
+  // vez, una salida se perdía. Además el movimiento se guardaba en la
+  // colección "movimientos_inventario", que no existe en las reglas de
+  // Firestore: el guardado era rechazado y el sistema reportaba error aunque
+  // el stock ya se había modificado.
+  //
+  // Ahora: una transacción de Firestore lee el stock REAL del servidor,
+  // valida, actualiza el producto y registra el movimiento en
+  // "inventario_movimientos" en una sola operación (todo o nada).
+
+  // Colección de movimientos (la que definen las reglas de Firestore)
+  const COLECCION_MOVIMIENTOS = "inventario_movimientos";
+
+  function calcularCamposDerivados(producto) {
+    const stock = Number(producto.stock || 0);
+    const costo = Number(producto.costo || 0);
+    const precio = Number(producto.precio || 0);
+
+    return {
+      estado_inventario:
+        stock <= 0
+          ? "AGOTADO"
+          : stock <= Number(producto.min || 0)
+            ? "STOCK_BAJO"
+            : "DISPONIBLE",
+
+      valor_inventario: stock * costo,
+
+      valor_venta: stock * precio,
+
+      utilidad_potencial: (precio - costo) * stock,
+
+      margen_porcentaje:
+        costo > 0 ? Number((((precio - costo) / costo) * 100).toFixed(2)) : 0,
+    };
+  }
+
+  function construirRegistro(id, producto, movimiento, stockAnterior) {
+    const cantidad = Number(movimiento.cantidad);
+    const costo = Number(producto.costo || 0);
+    const precio = Number(producto.precio || 0);
+    const cantidadAbs = Math.abs(cantidad);
+
+    return {
+      id,
+
+      producto_id: producto.id,
+
+      sku: producto.sku || "",
+
+      nombre: producto.nombre || "",
+
+      tipo: movimiento.tipo,
+
+      origen: movimiento.origen,
+
+      modulo: movimiento.modulo || "INVENTARIO",
+
+      documento: movimiento.documento || null,
+
+      referencia: movimiento.referencia || null,
+
+      cantidad,
+
+      stock_anterior: Number(stockAnterior),
+
+      stock_nuevo: Number(producto.stock),
+
+      costo,
+
+      precio,
+
+      valor_costo: costo * cantidadAbs,
+
+      valor_venta: precio * cantidadAbs,
+
+      utilidad: (precio - costo) * cantidadAbs,
+
+      usuario: movimiento.usuario,
+
+      observaciones: movimiento.observaciones || "",
+
+      fecha: hoy(),
+
+      hora: new Date().toLocaleTimeString("es-MX"),
+    };
+  }
+
   async function movimiento(data) {
     try {
       if (!data) {
@@ -88,19 +180,13 @@ const INVENTARIO_ENGINE = (() => {
           break;
       }
 
-      const inventario = DB.get("inventario") || [];
+      // El ID del documento se toma de la copia local; el STOCK se lee del
+      // servidor dentro de la transacción.
+      const productoLocal = obtenerProducto(productoId);
 
-      const index = inventario.findIndex(
-        (p) => p.id === productoId || p.sku === productoId,
-      );
-
-      if (index < 0) {
+      if (!productoLocal || !productoLocal.id) {
         throw new Error("Producto no encontrado.");
       }
-
-      const producto = inventario[index];
-
-      const stockAnterior = Number(producto.stock || 0);
 
       const movimientoInfo = {
         tipo,
@@ -124,82 +210,93 @@ const INVENTARIO_ENGINE = (() => {
         proveedor,
       };
 
-      validarMovimiento(
-        producto,
+      // Validación previa (sin stock) para no gastar un folio en vano
+      validarCantidad(movimientoInfo);
 
-        movimientoInfo,
-      );
+      const movId = await API.getFolio("MOV");
 
-      aplicarMovimiento(
-        producto,
+      const refProducto = FB.db.collection("inventario").doc(productoLocal.id);
 
-        movimientoInfo,
-      );
+      const refMovimiento = FB.db.collection(COLECCION_MOVIMIENTOS).doc(movId);
 
-      producto.estado_inventario =
-        producto.stock <= 0
-          ? "AGOTADO"
-          : producto.stock <= Number(producto.min || 0)
-            ? "STOCK_BAJO"
-            : "DISPONIBLE";
+      const resultado = await FB.db.runTransaction(async (tx) => {
+        const snap = await tx.get(refProducto);
 
-      producto.valor_inventario =
-        Number(producto.stock || 0) * Number(producto.costo || 0);
+        if (!snap.exists) {
+          throw new Error("Producto no encontrado en el servidor.");
+        }
 
-      producto.valor_venta =
-        Number(producto.stock || 0) * Number(producto.precio || 0);
+        // [FASE 4] Nunca sobrescribir un movimiento existente
+        const snapMov = await tx.get(refMovimiento);
 
-      producto.utilidad_potencial =
-        (Number(producto.precio || 0) - Number(producto.costo || 0)) *
-        Number(producto.stock || 0);
+        if (snapMov.exists) {
+          throw new Error(
+            `El folio ${movId} ya está registrado. Intenta de nuevo.`,
+          );
+        }
 
-      producto.margen_porcentaje =
-        Number(producto.costo || 0) > 0
-          ? Number(
-              (
-                ((Number(producto.precio) - Number(producto.costo)) /
-                  Number(producto.costo)) *
-                100
-              ).toFixed(2),
-            )
-          : 0;
+        const producto = { id: snap.id, ...snap.data() };
 
-      producto.fecha_actualizacion = hoy();
+        const stockAnterior = Number(producto.stock || 0);
 
-      producto.hora_actualizacion = new Date().toLocaleTimeString("es-MX");
+        validarMovimiento(producto, movimientoInfo);
 
-      producto.usuario_actualizacion = usuario;
+        aplicarMovimiento(producto, movimientoInfo);
 
-      inventario[index] = producto;
+        const cambios = {
+          stock: producto.stock,
 
-      DB.set(
-        "inventario",
+          ...calcularCamposDerivados(producto),
 
-        inventario,
-      );
+          fecha_actualizacion: hoy(),
 
-      await DATA.update(
-        "inventario",
+          hora_actualizacion: new Date().toLocaleTimeString("es-MX"),
 
-        producto.id,
+          usuario_actualizacion: usuario,
+        };
 
-        producto,
-      );
+        Object.assign(producto, cambios);
 
-      const registro = await registrarMovimiento(
-        producto,
+        const registro = construirRegistro(
+          movId,
+          producto,
+          movimientoInfo,
+          stockAnterior,
+        );
 
-        movimientoInfo,
+        // Solo se escriben los campos que cambian (no el documento completo)
+        tx.update(refProducto, cambios);
 
-        stockAnterior,
-      );
+        tx.set(refMovimiento, registro);
+
+        return { producto, registro };
+      });
+
+      // Actualizar la copia local con el valor real del servidor
+      const inventario = DB.get("inventario") || [];
+
+      const index = inventario.findIndex((p) => p.id === resultado.producto.id);
+
+      if (index >= 0) {
+        inventario[index] = { ...inventario[index], ...resultado.producto };
+      } else {
+        inventario.push(resultado.producto);
+      }
+
+      DB.set("inventario", inventario);
+
+      const movimientos = DB.get(COLECCION_MOVIMIENTOS) || [];
+
+      movimientos.push(resultado.registro);
+
+      DB.set(COLECCION_MOVIMIENTOS, movimientos);
 
       return {
         ok: true,
 
-        producto,
+        producto: resultado.producto,
 
-        movimiento: registro,
+        movimiento: resultado.registro,
       };
     } catch (error) {
       console.error(
@@ -216,6 +313,29 @@ const INVENTARIO_ENGINE = (() => {
     }
   }
 
+  function validarCantidad(movimiento) {
+    const cantidad = Number(movimiento.cantidad);
+
+    if (!Number.isFinite(cantidad)) {
+      throw new Error("Cantidad inválida.");
+    }
+
+    // [FASE 4] AJUSTE acepta positivo (sumar) o negativo (restar)
+    if (movimiento.tipo === TIPOS.AJUSTE) {
+      if (cantidad === 0) {
+        throw new Error("La cantidad del ajuste no puede ser cero.");
+      }
+
+      return true;
+    }
+
+    if (cantidad <= 0) {
+      throw new Error("La cantidad debe ser mayor a cero.");
+    }
+
+    return true;
+  }
+
   function validarMovimiento(producto, movimiento) {
     if (!producto) {
       throw new Error("Producto no encontrado.");
@@ -225,25 +345,26 @@ const INVENTARIO_ENGINE = (() => {
       throw new Error("Movimiento inválido.");
     }
 
+    validarCantidad(movimiento);
+
     const cantidad = Number(movimiento.cantidad);
 
-    if (!Number.isFinite(cantidad)) {
-      throw new Error("Cantidad inválida.");
-    }
-
-    if (cantidad <= 0) {
-      throw new Error("La cantidad debe ser mayor a cero.");
-    }
-
+    // [FASE 4] CANCELACION regresa stock, así que ya no se valida aquí
+    // (antes cancelar la venta de la última pieza fallaba con "Stock insuficiente").
     switch (movimiento.tipo) {
       case TIPOS.SALIDA:
 
       case TIPOS.VENTA:
 
       case TIPOS.GARANTIA:
-
-      case TIPOS.CANCELACION:
         if (Number(producto.stock || 0) < cantidad) {
+          throw new Error(`Stock insuficiente. Disponible: ${producto.stock}`);
+        }
+
+        break;
+
+      case TIPOS.AJUSTE:
+        if (Number(producto.stock || 0) + cantidad < 0) {
           throw new Error(`Stock insuficiente. Disponible: ${producto.stock}`);
         }
 
@@ -284,6 +405,12 @@ const INVENTARIO_ENGINE = (() => {
 
         break;
 
+      // [FASE 4] Ajuste manual: cantidad con signo
+      case TIPOS.AJUSTE:
+        nuevoStock += movimiento.cantidad;
+
+        break;
+
       default:
         throw new Error("Tipo de movimiento no soportado.");
     }
@@ -297,60 +424,61 @@ const INVENTARIO_ENGINE = (() => {
     return producto;
   }
 
+  // [FASE 4] Verifica contra el SERVIDOR que haya stock para un conjunto de
+  // líneas { productoId, cantidad } (suma cantidades del mismo producto).
+  // Devuelve { ok: true } o { ok: false, producto, disponible, requerido }.
+  async function verificarStock(lineas) {
+    const requeridos = {};
+
+    for (const l of lineas || []) {
+      const local = obtenerProducto(l.productoId);
+
+      if (!local || !local.id) {
+        return {
+          ok: false,
+          producto: l.productoId,
+          disponible: 0,
+          requerido: Number(l.cantidad || 0),
+        };
+      }
+
+      requeridos[local.id] = requeridos[local.id] || {
+        nombre: local.nombre || local.sku,
+        cantidad: 0,
+      };
+
+      requeridos[local.id].cantidad += Number(l.cantidad || 0);
+    }
+
+    for (const [id, req] of Object.entries(requeridos)) {
+      const snap = await FB.db.collection("inventario").doc(id).get();
+
+      const disponible = snap.exists ? Number(snap.data().stock || 0) : 0;
+
+      if (disponible < req.cantidad) {
+        return {
+          ok: false,
+          producto: req.nombre,
+          disponible,
+          requerido: req.cantidad,
+        };
+      }
+    }
+
+    return { ok: true };
+  }
+
+  // Se conserva por compatibilidad (ya no se usa dentro del motor: el
+  // registro se guarda dentro de la transacción de movimiento()).
   async function registrarMovimiento(producto, movimiento, stockAnterior) {
-    const registro = {
-      id: await API.getFolio("MOV"),
-
-      producto_id: producto.id,
-
-      sku: producto.sku,
-
-      nombre: producto.nombre,
-
-      tipo: movimiento.tipo,
-
-      origen: movimiento.origen,
-
-      modulo: movimiento.modulo || "INVENTARIO",
-
-      documento: movimiento.documento || null,
-
-      referencia: movimiento.referencia || null,
-
-      cantidad: Number(movimiento.cantidad),
-
-      stock_anterior: Number(stockAnterior),
-
-      stock_nuevo: Number(producto.stock),
-
-      costo: Number(producto.costo || 0),
-
-      precio: Number(producto.precio || 0),
-
-      valor_costo: Number(producto.costo || 0) * Number(movimiento.cantidad),
-
-      valor_venta: Number(producto.precio || 0) * Number(movimiento.cantidad),
-
-      utilidad:
-        (Number(producto.precio || 0) - Number(producto.costo || 0)) *
-        Number(movimiento.cantidad),
-
-      usuario: movimiento.usuario,
-
-      observaciones: movimiento.observaciones || "",
-
-      fecha: hoy(),
-
-      hora: new Date().toLocaleTimeString("es-MX"),
-    };
-
-    await DATA.save(
-      "movimientos_inventario",
-
-      registro.id,
-
-      registro,
+    const registro = construirRegistro(
+      await API.getFolio("MOV"),
+      producto,
+      movimiento,
+      stockAnterior,
     );
+
+    await DATA.save(COLECCION_MOVIMIENTOS, registro.id, registro);
 
     return registro;
   }
@@ -439,6 +567,8 @@ const INVENTARIO_ENGINE = (() => {
     validarMovimiento,
 
     registrarMovimiento,
+
+    verificarStock,
 
     entrada,
 

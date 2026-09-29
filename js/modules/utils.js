@@ -201,7 +201,15 @@ async function abrirArchivoPrivado(ref) {
   notify("❌ No se pudo abrir el archivo");
 }
 
+// [FASE 4] Escapar texto que se inserta en HTML (innerHTML / plantillas).
+// Evita que un nombre, asunto o comentario con etiquetas se ejecute como código.
+// Convierte saltos de línea en <br> para conservar el formato del texto.
+function escHTML(valor) {
+  return escAttr(valor).replace(/\r?\n/g, "<br>");
+}
+
 window.escAttr = escAttr;
+window.escHTML = escHTML;
 window.rutaStorageDesdeUrl = rutaStorageDesdeUrl;
 window.abrirArchivoPrivado = abrirArchivoPrivado;
 

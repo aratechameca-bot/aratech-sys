@@ -58,6 +58,10 @@ window.FOLIO_COLS = {
   SKU: ["inventario"],
   ARPAG: ["pagos"],
   ARFIN: ["finanzas_movimientos"],
+  // [FASE 4] Prefijos que faltaban (clientes, avisos y movimientos de inventario)
+  CLI: ["clientes"],
+  AVI: ["cliente_avisos"],
+  MOV: ["inventario_movimientos"],
 };
 
 // ============================================================

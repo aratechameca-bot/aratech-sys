@@ -1062,11 +1062,11 @@ function rndTickets() {
 
       <td>${fmt(t.fecha)}</td>
 
-      <td>${t.cliente_nombre || "—"}</td>
+      <td>${escHTML(t.cliente_nombre || "—")}</td>
 
       <td>${t.capturado_por || "—"}</td>
 
-      <td>${t.asunto || "—"}</td>
+      <td>${escHTML(t.asunto || "—")}</td>
 
       <td>
         <span class="tag ${

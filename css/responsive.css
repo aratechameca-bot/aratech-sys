@@ -418,6 +418,12 @@
       display: none !important;
     }
 
+    /* [FASE 4] Inventario de solo consulta para el técnico */
+    body.rol-tecnico #panel-inventario button[onclick^="openM('m-prod')"],
+    body.rol-tecnico #panel-inventario .btn-acciones {
+      display: none !important;
+    }
+
     /* [FASE 1.2] Mientras se verifica la sesión guardada, solo se ve el fondo
        del login (sin botón), para no mostrarlo si la sesión se va a restaurar */
     body.auth-pending #login-screen > * {

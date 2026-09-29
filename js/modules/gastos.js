@@ -119,7 +119,7 @@ function rndGastosTabla(lista) {
     <tr>
       <td style="font-size:11px;color:var(--text2)">${fmt(g.fecha)}</td>
       <td><span class="tag tb" style="font-size:10px">${g.categoria}</span>${g.subcategoria ? `<br><span style="font-size:10px;color:var(--text3)">${g.subcategoria}</span>` : ""}</td>
-      <td style="font-size:12px">${g.descripcion || "—"}</td>
+      <td style="font-size:12px">${escHTML(g.descripcion || "—")}</td>
       <td style="color:var(--red);font-weight:700;font-family:var(--fh)">${mxn(g.monto)}</td>
       <td><span style="font-size:11px;color:${metColor[g.metodo] || "var(--text2)"}">${g.metodo || "—"}</span></td>
       <td style="font-size:11px;color:var(--text3)">${g.registrado_por || "—"}</td>

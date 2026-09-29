@@ -1,29 +1,42 @@
-function puedeAbrirPanel(panel) {
-  const rol = window.currentUser?.rol;
+// ============================================================
+// [FASE 4] MATRIZ DE ROLES — única fuente de verdad
+// ============================================================
+// Antes había dos listas distintas (el menú en auth.js y esta función), y no
+// coincidían: el técnico veía módulos en el menú que luego no podía abrir.
+// Ahora el menú se construye a partir de esta misma función.
+//
+// - Recepcionista: todo, excepto los paneles bloqueados.
+// - Técnico: SOLO los paneles permitidos (lista cerrada; un módulo nuevo
+//   queda oculto para el técnico hasta que se agregue aquí).
+const PANELES_POR_ROL = Object.freeze({
+  recepcionista: {
+    bloqueados: ["config", "historial"],
+  },
 
+  tecnico: {
+    // Órdenes y tickets; inventario en solo consulta; políticas (informativo)
+    permitidos: ["dashboard", "ordenes", "tickets", "inventario", "politicas"],
+  },
+});
+
+function puedeAbrirPanel(panel, rol = window.currentUser?.rol) {
   if (!rol) return false;
 
   if (rol === "admin") return true;
 
-  if (rol === "recepcionista") {
-    return !["config", "historial"].includes(panel);
-  }
+  const reglas = PANELES_POR_ROL[rol];
 
-  if (rol === "tecnico") {
-    return ![
-      "ventas",
-      "clientes",
-      "inventario",
-      "gastos",
-      "compras",
-      "garantias",
-      "config",
-      "historial",
-    ].includes(panel);
-  }
+  if (!reglas) return false;
+
+  if (reglas.permitidos) return reglas.permitidos.includes(panel);
+
+  if (reglas.bloqueados) return !reglas.bloqueados.includes(panel);
 
   return false;
 }
+
+window.PANELES_POR_ROL = PANELES_POR_ROL;
+window.puedeAbrirPanel = puedeAbrirPanel;
 
 // ============================================================
 // ACTIVAR PANEL

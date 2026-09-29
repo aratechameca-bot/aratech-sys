@@ -188,7 +188,7 @@ Te escribimos de ARATECH para notificarte avances relacionados con tu Orden de S
               color:var(--text2);
               margin-top:4px;
             ">
-              ${ticketRel.asunto || "Sin asunto"}
+              ${escHTML(ticketRel.asunto || "Sin asunto")}
             </div>
 
             <div style="

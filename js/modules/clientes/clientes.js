@@ -534,7 +534,7 @@ ${
 
             <div style="margin-top:6px">
 
-                  ${a.descripcion}
+                  ${escHTML(a.descripcion)}
 
               </div>
 

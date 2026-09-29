@@ -37,7 +37,7 @@ function renderTicketFiles(ticketId) {
             text-decoration:none;
           ">
 
-          <i class="ar-icon clip"></i> ${a.nombre}
+          <i class="ar-icon clip"></i> ${escHTML(a.nombre)}
 
         </a>
 
@@ -61,7 +61,7 @@ function renderTicketFiles(ticketId) {
     ">
 
       <span>
-        <i class="ar-icon usuario"></i> ${a.autor || "Sistema"}
+        <i class="ar-icon usuario"></i> ${escHTML(a.autor || "Sistema")}
       </span>
 
       <span>

@@ -28,6 +28,32 @@ async function saveVta() {
     }
   }
 
+  // [FASE 4] Verificar el stock REAL en el servidor antes de registrar nada
+  // (la copia local puede estar desactualizada si otro equipo vendió).
+  const verificacion = await INVENTARIO_ENGINE.verificarStock(
+    LV.filter((x) => x.tipo === "producto").map((l) => ({
+      productoId: l.sku,
+      cantidad: Number(l.qty || 1),
+    })),
+  );
+
+  if (!verificacion.ok) {
+    ARABOT.alert({
+      title: "Stock insuficiente",
+
+      message: String(verificacion.producto || ""),
+
+      details:
+        "Disponible: " +
+        verificacion.disponible +
+        ". Requerido: " +
+        verificacion.requerido +
+        ". Es posible que otro equipo haya vendido este producto.",
+    });
+
+    return;
+  }
+
   ARABOT.loading({
     title: "Registrando venta",
 
@@ -92,7 +118,9 @@ async function saveVta() {
 
         message: resultado.error,
 
-        details: `No fue posible descontar ${l.desc}. La venta fue cancelada.`,
+        // [FASE 4] La venta ya quedó guardada en este punto; el mensaje
+        // anterior decía "La venta fue cancelada", lo cual no era cierto.
+        details: `La venta ${fol} se registró, pero no fue posible descontar ${l.desc} del inventario. Revisa el inventario de ese producto.`,
       });
 
       return;
@@ -957,24 +985,47 @@ async function saveEditVta() {
     if (ep) l.precio = parseFloat(ep.value) || 0;
   });
   // Ajustar inventario según diferencia de cantidades
-  const inventario = DB.get("inventario");
-
+  // [FASE 4] Mediante el motor (transacción con el stock real del servidor y
+  // registro del movimiento). Antes se escribía el número calculado localmente.
   for (const l of (v.lineas || []).filter((x) => x.tipo === "producto")) {
     const anterior = cantidadesOriginales[l.sku] || 0;
     const nueva = l.qty || 0;
 
     const diferencia = anterior - nueva;
 
-    if (diferencia !== 0) {
-      const idx = inventario.findIndex((p) => p.sku === l.sku);
+    if (diferencia === 0) continue;
 
-      if (idx >= 0) {
-        inventario[idx].stock += diferencia;
+    // diferencia > 0: se vendieron menos piezas → regresan al inventario
+    // diferencia < 0: se vendieron más piezas → salen del inventario
+    const resultado =
+      diferencia > 0
+        ? await INVENTARIO_ENGINE.devolucion({
+            productoId: l.sku,
+            cantidad: diferencia,
+            documento: v.folio || id,
+            modulo: "VENTAS",
+            origen: "EDICION_VENTA",
+            observaciones: `Edición de venta ${v.folio || id}`,
+          })
+        : await INVENTARIO_ENGINE.venta({
+            productoId: l.sku,
+            cantidad: -diferencia,
+            documento: v.folio || id,
+            modulo: "VENTAS",
+            origen: "EDICION_VENTA",
+            observaciones: `Edición de venta ${v.folio || id}`,
+          });
 
-        await DATA.update("inventario", inventario[idx].id, {
-          stock: inventario[idx].stock,
-        });
-      }
+    if (!resultado.ok) {
+      ARABOT.alert({
+        title: "Error de inventario",
+
+        message: resultado.error,
+
+        details: `No se pudo ajustar el inventario de ${l.desc || l.sku}. Los cambios de la venta no se guardaron.`,
+      });
+
+      return;
     }
   }
   const iva = parseFloat(document.getElementById("ev-iva").value) || 0;
@@ -1205,31 +1256,8 @@ async function restaurarInventarioVenta(venta) {
   return true;
 }
 
-async function cancelarGarantiasVenta(folioVenta) {
-  const garantias = DB.get("garantias");
-
-  const lista = garantias.filter((g) => g.folio_vta === folioVenta);
-
-  if (!lista.length) return;
-
-  for (const g of lista) {
-    g.estado = "Cancelada";
-
-    g.fecha_cancelacion = hoy();
-
-    g.usuario_cancelacion = currentUser?.nombre || "Sistema";
-
-    await DATA.update("garantias", g.id, {
-      estado: g.estado,
-
-      fecha_cancelacion: g.fecha_cancelacion,
-
-      usuario_cancelacion: g.usuario_cancelacion,
-    });
-  }
-
-  rndGar();
-}
+// [FASE 4] cancelarGarantiasVenta() se eliminó de aquí: estaba duplicada y la
+// versión que realmente se usaba es la de js/modules/garantias.js (se carga después).
 
 async function desvincularOrdenVenta(venta) {
   if (!venta.orden_rel) return;
@@ -1272,6 +1300,5 @@ window.saveEditVta = saveEditVta;
 window.eliminarVtaConfirm = eliminarVtaConfirm;
 window.delVta = delVta;
 window.restaurarInventarioVenta = restaurarInventarioVenta;
-window.cancelarGarantiasVenta = cancelarGarantiasVenta;
 window.desvincularOrdenVenta = desvincularOrdenVenta;
 window.desvincularTicketVenta = desvincularTicketVenta;

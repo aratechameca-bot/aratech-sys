@@ -222,7 +222,10 @@ function autenticar(session) {
   setTimeout(() => {
     const last = localStorage.getItem("aratech-last-panel") || "dashboard";
 
-    activarPanel(last, false);
+    // [FASE 4] Si el último panel no está permitido para este rol, ir al dashboard
+    const ocultos = window._panelesOcultos || [];
+
+    activarPanel(ocultos.includes(last) ? "dashboard" : last, false);
   }, 50);
 }
 
@@ -243,21 +246,23 @@ async function loginLocal() {
 }
 
 function aplicarPermisosUI(usuario) {
+  // [FASE 4] El menú se construye con la misma matriz que valida el acceso
+  // (puedeAbrirPanel en ui.js), para que nunca se muestre un módulo que
+  // después diga "No tienes permisos".
   const ocultar = [];
 
-  if (usuario.rol === "recepcionista") {
-    ocultar.push("config", "historial");
-  } else if (usuario.rol === "tecnico") {
-    ocultar.push(
-      "ventas",
-      "clientes",
-      "inventario",
-      "gastos",
-      "compras",
-      "config",
-      "historial",
-    );
-  }
+  document.querySelectorAll(".sb-item[data-panel]").forEach((item) => {
+    if (!puedeAbrirPanel(item.dataset.panel, usuario.rol)) {
+      ocultar.push(item.dataset.panel);
+    }
+  });
+
+  // [FASE 4] Clase de rol en <body> para ocultar botones de edición por CSS
+  // (por ejemplo, el inventario es de solo consulta para el técnico).
+  document.body.classList.remove("rol-admin", "rol-recepcionista", "rol-tecnico");
+  if (usuario.rol) document.body.classList.add("rol-" + usuario.rol);
+
+  window._panelesOcultos = ocultar;
 
   document.querySelectorAll(".sb-item[data-panel]").forEach((item) => {
     const panel = item.dataset.panel;

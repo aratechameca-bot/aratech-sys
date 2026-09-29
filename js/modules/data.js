@@ -51,10 +51,10 @@ window.DATA = {
   // FOLIADOR
   // ============================================================
 
-  async nextFolio(prefix) {
+  async nextFolio(prefix, minimo = 0) {
     switch (this.getEngine("folios")) {
       case window.ENGINE.FIREBASE:
-        return await window.DRIVERS.firebase.nextFolio(prefix);
+        return await window.DRIVERS.firebase.nextFolio(prefix, minimo);
 
       default:
         return folioLocal(prefix);

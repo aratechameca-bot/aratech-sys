@@ -105,7 +105,9 @@ FB.delete = async function (collection, id) {
 // FOLIADORES FIRESTORE
 // ============================================================
 
-FB.nextFolio = async function (prefix) {
+// [FASE 4] "minimo" (opcional): si el contador quedó atrasado respecto a los
+// registros existentes, el siguiente folio será mayor que ese número.
+FB.nextFolio = async function (prefix, minimo = 0) {
   const ref = FB.db.collection("folios").doc(prefix);
 
   return await FB.db.runTransaction(async (tx) => {
@@ -125,6 +127,8 @@ FB.nextFolio = async function (prefix) {
 
       ultimo = Number(cache[prefix] || 0);
     }
+
+    ultimo = Math.max(ultimo, Number(minimo) || 0);
 
     ultimo++;
 
